@@ -7,10 +7,6 @@ const router = createRouter({
   routes: [
   {
     path: '/',
-    redirect: '/login',
-  },
-  {
-    path: '/login',
     name: 'Login',
     component: PageLogin,
     meta: { requiresGuest: true },
