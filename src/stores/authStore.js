@@ -17,11 +17,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   // ─── Actions ───
 
-  /**
-   * Login dengan email & password
-   * @param {string} email
-   * @param {string} password
-   */
   const login = async (email, password) => {
     isLoading.value = true
     errorMessage.value = ''
@@ -35,7 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (error) throw error
 
       user.value = data.user
-      await fetchProfile(data.user.id)
+      // await fetchProfile(data.user.id)
 
       return { success: true }
     } catch (error) {
@@ -46,9 +41,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Logout dari sistem
-   */
   const logout = async () => {
     isLoading.value = true
 
@@ -64,10 +56,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Ambil data profil user dari tabel profiles
-   * @param {string} userId
-   */
   const fetchProfile = async (userId) => {
     try {
       const { data, error } = await supabase
@@ -84,9 +72,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Cek sesi aktif saat app pertama kali dibuka
-   */
   const initSession = async () => {
     isLoading.value = true
 
@@ -95,7 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (data.session) {
         user.value = data.session.user
-        await fetchProfile(data.session.user.id)
+        // await fetchProfile(data.session.user.id)
       }
     } catch (error) {
       console.error('Init session error:', error.message)
@@ -104,14 +89,11 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Listen perubahan sesi secara realtime (token refresh, logout dari tab lain)
-   */
   const listenAuthChanges = () => {
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         user.value = session.user
-        await fetchProfile(session.user.id)
+        // await fetchProfile(session.user.id)
       }
 
       if (event === 'SIGNED_OUT') {
@@ -125,10 +107,6 @@ export const useAuthStore = defineStore('auth', () => {
     })
   }
 
-  /**
-   * Map pesan error Supabase ke Bahasa Indonesia
-   * @param {string} message
-   */
   const mapErrorMessage = (message) => {
     const map = {
       'Invalid login credentials': 'Email atau password salah.',
@@ -140,17 +118,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    // state
     user,
     profile,
     isLoading,
     errorMessage,
-    // getters
     isLoggedIn,
     isAdmin,
     isKader,
     posyanduId,
-    // actions
     login,
     logout,
     fetchProfile,
