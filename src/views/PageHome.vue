@@ -712,7 +712,7 @@ function iconKegiatan() {
 /* Topbar */
 .topbar {
   height: var(--topbar-h);
-  background: var(--white);
+  background: var(--scooter);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -729,12 +729,12 @@ function iconKegiatan() {
 .page-title {
   font-size: 18px;
   font-weight: 700;
-  color: var(--sapphire);
+  color: #ffffff;
   margin: 0;
 }
 .breadcrumb {
   font-size: 11px;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.7);
 }
 .topbar-right {
   display: flex;
@@ -746,11 +746,11 @@ function iconKegiatan() {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--text-muted);
-  background: var(--alabaster);
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.15);
   padding: 6px 12px;
   border-radius: 20px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 .notif-btn {
   position: relative;
@@ -761,29 +761,29 @@ function iconKegiatan() {
   justify-content: center;
   border-radius: 8px;
   cursor: pointer;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.7);
   transition: background 0.15s;
 }
-.notif-btn:hover { background: var(--alabaster); }
+.notif-btn:hover { background: rgba(255, 255, 255, 0.2); }
 .notif-dot {
   position: absolute;
   top: 6px; right: 6px;
   width: 8px; height: 8px;
   border-radius: 50%;
   background: #E55353;
-  border: 2px solid #fff;
+  border: 2px solid var(--scooter);
 }
 .posyandu-filter {
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   padding: 7px 12px;
   font-size: 12px;
   color: var(--sapphire);
-  background: var(--white);
+  background: rgba(255, 255, 255, 0.95);
   cursor: pointer;
   outline: none;
 }
-.posyandu-filter:focus { border-color: var(--scooter); }
+.posyandu-filter:focus { border-color: rgba(255, 255, 255, 0.5); }
 
 /* Content Area */
 .content-area {
