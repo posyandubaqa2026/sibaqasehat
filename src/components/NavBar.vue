@@ -74,7 +74,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import '../assets/NavBar.CSS'
+import '../assets/NavBar.css'
 
 const props = defineProps({
   currentPageTitle: { type: String,           required: true },
