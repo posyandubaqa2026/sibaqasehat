@@ -167,9 +167,20 @@
 
       <!-- Placeholder pages -->
       <div class="content-area placeholder-page" v-else>
-        <div class="placeholder-icon" v-html="currentNavIcon"></div>
-        <h2>{{ currentPageTitle }}</h2>
-        <p>Halaman ini sedang dalam pengembangan.</p>
+        <!-- No Posyandu Selected State -->
+        <div class="no-posyandu-selected" v-if="['balita', 'bumil', 'lansia', 'imunisasi', 'kegiatan', 'stok'].includes(activeNav) && activeTab === null">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" fill="#BCC5CC"/>
+          </svg>
+          <h2>Tidak Ada Data yang Akan Ditampilkan</h2>
+          <p>Silahkan memilih posyandu dari tab di atas untuk melihat data</p>
+        </div>
+        <!-- Development Page State -->
+        <template v-else>
+          <div class="placeholder-icon" v-html="currentNavIcon"></div>
+          <h2>{{ currentPageTitle }}</h2>
+          <p>Halaman ini sedang dalam pengembangan.</p>
+        </template>
       </div>
     </main>
 
@@ -331,42 +342,73 @@ async function fetchDashboardData() {
   fetchError.value = null
 
   try {
-    // ── 1. Ringkasan per posyandu dari view ──────
+    // ── 1. Total Balita dari v_semua_balita ──────
+    const { count: totalBalitaCount, error: errBalita } = await supabase
+      .from('v_semua_balita')
+      .select('*', { count: 'exact', head: true })
+
+    if (errBalita) throw errBalita
+
+    // ── 2. Ringkasan per posyandu dari view ──────
     const { data: ringkasan, error: errRingkasan } = await supabase
       .from('v_ringkasan_posyandu')
-      .select('id, nama, ketua, total_balita, total_bumil, total_lansia, kegiatan_terjadwal')
+      .select('id, nama, ketua, total_bumil, total_lansia, kegiatan_terjadwal')
       .order('nama')
 
     if (errRingkasan) throw errRingkasan
 
-    // Isi posyanduStats
-    posyanduStats.value = ringkasan.map((p, i) => ({
-      num:    String(i + 1).padStart(2, '0'),
-      id:     p.id,
-      nama:   p.nama.replace('Posyandu ', ''),
-      ketua:  p.ketua ?? '–',
-      // Tabel posyandu tidak punya kolom status aktif/libur,
-      // jadikan 'Aktif' default; ganti jika kamu tambah kolom ini nanti
-      status: 'Aktif',
-      balita: p.total_balita  ?? 0,
-      bumil:  p.total_bumil   ?? 0,
-      lansia: p.total_lansia  ?? 0,
-    }))
+    // ── 3. Hitung total balita per posyandu dari tabel individual ──
+    const table_mappings = [
+      'balita_melati_1', 'balita_melati_2',
+      'balita_anggrek_1', 'balita_anggrek_2',
+      'balita_mawar_1', 'balita_mawar_2',
+      'balita_kenanga_1', 'balita_kenanga_2'
+    ]
+    const posyandu_names = [
+      'Posyandu Melati I', 'Posyandu Melati II',
+      'Posyandu Anggrek I', 'Posyandu Anggrek II',
+      'Posyandu Mawar I', 'Posyandu Mawar II',
+      'Posyandu Kenanga I', 'Posyandu Kenanga II'
+    ]
+
+    const balitaCounts = {}
+    for (let i = 0; i < table_mappings.length; i++) {
+      const { count, error } = await supabase
+        .from(table_mappings[i])
+        .select('*', { count: 'exact', head: true })
+      if (!error) {
+        balitaCounts[posyandu_names[i]] = count || 0
+      }
+    }
+
+    // Isi posyanduStats dengan data dari ringkasan + balita counts
+    posyanduStats.value = ringkasan.map((p, i) => {
+      const posyanduName = p.nama
+      return {
+        num:    String(i + 1).padStart(2, '0'),
+        id:     p.id,
+        nama:   p.nama.replace('Posyandu ', ''),
+        ketua:  p.ketua ?? '–',
+        status: 'Aktif',
+        balita: balitaCounts[posyanduName] ?? 0,
+        bumil:  p.total_bumil   ?? 0,
+        lansia: p.total_lansia  ?? 0,
+      }
+    })
 
     // Isi posyanduList untuk NavBar dropdown
     posyanduList.value = ringkasan.map(p => ({ id: p.id, nama: p.nama }))
 
-    // ── 2. Total lintas posyandu untuk stat cards ─
-    const totalBalita  = ringkasan.reduce((sum, p) => sum + (p.total_balita  ?? 0), 0)
-    const totalBumil   = ringkasan.reduce((sum, p) => sum + (p.total_bumil   ?? 0), 0)
-    const totalLansia  = ringkasan.reduce((sum, p) => sum + (p.total_lansia  ?? 0), 0)
-    const totalKegiatan= ringkasan.reduce((sum, p) => sum + (p.kegiatan_terjadwal ?? 0), 0)
+    // ── 4. Total lintas posyandu untuk stat cards ─
+    const totalBumil    = ringkasan.reduce((sum, p) => sum + (p.total_bumil   ?? 0), 0)
+    const totalLansia   = ringkasan.reduce((sum, p) => sum + (p.total_lansia  ?? 0), 0)
+    const totalKegiatan = ringkasan.reduce((sum, p) => sum + (p.kegiatan_terjadwal ?? 0), 0)
 
     statCards.value = [
-      { label: 'Total Balita',       value: String(totalBalita),   icon: iconBalita(),   color: '#2F9D94', trend: 0 },
-      { label: 'Ibu Hamil Aktif',    value: String(totalBumil),    icon: iconBumil(),    color: '#025F67', trend: 0 },
-      { label: 'Lansia Terdaftar',   value: String(totalLansia),   icon: iconLansia(),   color: '#BCC5CC', trend: 0 },
-      { label: 'Kegiatan Terjadwal', value: String(totalKegiatan), icon: iconKegiatan(), color: '#063154', trend: 0 },
+      { label: 'Total Balita',       value: String(totalBalitaCount ?? 0), icon: iconBalita(),   color: '#2F9D94', trend: 0 },
+      { label: 'Ibu Hamil Aktif',    value: String(totalBumil),            icon: iconBumil(),    color: '#025F67', trend: 0 },
+      { label: 'Lansia Terdaftar',   value: String(totalLansia),           icon: iconLansia(),   color: '#BCC5CC', trend: 0 },
+      { label: 'Kegiatan Terjadwal', value: String(totalKegiatan),         icon: iconKegiatan(), color: '#063154', trend: 0 },
     ]
 
   } catch (err) {

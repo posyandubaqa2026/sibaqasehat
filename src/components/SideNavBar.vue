@@ -89,7 +89,6 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue'
 import '../assets/SideNavBar.css'
 
 defineProps({

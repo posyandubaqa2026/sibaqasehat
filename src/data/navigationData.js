@@ -10,7 +10,7 @@ export const navItems = [
     </svg>`
   },
   {
-    id: 'balita', label: 'Data Balita', badge: '248',
+    id: 'balita', label: 'Data Balita',
     icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
       <circle cx="9" cy="6" r="3.5" stroke="currentColor" stroke-width="1.4"/>
       <path d="M2 16c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
