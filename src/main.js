@@ -15,6 +15,6 @@ app.use(router)
 const authStore = useAuthStore()
 
 authStore.listenAuthChanges() // listen perubahan auth realtime
-await authStore.initSession() // cek sesi aktif
+authStore.initSession() // cek sesi aktif
 
 app.mount('#app')
