@@ -1,107 +1,30 @@
 <template>
   <div class="dashboard">
     <!-- Sidebar -->
-    <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
-      <div class="sidebar-header">
-        <div class="logo-wrap">
-          <div class="logo-icon">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-              <rect width="28" height="28" rx="8" fill="#2F9D94"/>
-              <path d="M14 6v16M6 14h16" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-              <circle cx="14" cy="14" r="4" fill="#063154" opacity="0.5"/>
-            </svg>
-          </div>
-          <div v-if="!sidebarCollapsed" class="logo-text">
-            <span class="logo-name">SiBaqaSehat</span>
-            <span class="logo-sub">Kel. Baqa, Samarinda</span>
-          </div>
-        </div>
-        <button class="collapse-btn" @click="sidebarCollapsed = !sidebarCollapsed">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path :d="sidebarCollapsed ? 'M6 3l5 5-5 5' : 'M10 3L5 8l5 5'"
-              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </div>
-
-      <nav class="sidebar-nav">
-        <div class="nav-group">
-          <span v-if="!sidebarCollapsed" class="nav-label">Menu Utama</span>
-          <a
-            v-for="item in navItems"
-            :key="item.id"
-            class="nav-item"
-            :class="{ active: activeNav === item.id }"
-            @click="activeNav = item.id"
-          >
-            <span class="nav-icon" v-html="item.icon"></span>
-            <span v-if="!sidebarCollapsed" class="nav-text">{{ item.label }}</span>
-            <span v-if="!sidebarCollapsed && item.badge" class="nav-badge">{{ item.badge }}</span>
-          </a>
-        </div>
-
-        <div class="nav-group">
-          <span v-if="!sidebarCollapsed" class="nav-label">Laporan</span>
-          <a
-            v-for="item in reportItems"
-            :key="item.id"
-            class="nav-item"
-            :class="{ active: activeNav === item.id }"
-            @click="activeNav = item.id"
-          >
-            <span class="nav-icon" v-html="item.icon"></span>
-            <span v-if="!sidebarCollapsed" class="nav-text">{{ item.label }}</span>
-          </a>
-        </div>
-      </nav>
-
-      <div class="sidebar-footer" v-if="!sidebarCollapsed">
-        <div class="user-card">
-          <div class="user-avatar">{{ userInitials }}</div>
-          <div class="user-info">
-            <span class="user-name">{{ currentUser.nama }}</span>
-            <span class="user-role">{{ roleLabel }}</span>
-          </div>
-          <button class="logout-btn" @click="handleLogout" title="Keluar">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6"
-                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </aside>
+    <SideNavBar
+      :collapsed="sidebarCollapsed"
+      :activeNav="activeNav"
+      :currentUser="currentUser"
+      :userInitials="userInitials"
+      :roleLabel="roleLabel"
+      :navItems="navItems"
+      :reportItems="reportItems"
+      @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
+      @navigate="activeNav = $event"
+      @logout="handleLogout"
+    />
 
     <!-- Main Content -->
     <main class="main-content">
-      <!-- Topbar -->
-      <header class="topbar">
-        <div class="topbar-left">
-          <h1 class="page-title">{{ currentPageTitle }}</h1>
-          <span class="breadcrumb">Kelurahan Baqa &rsaquo; {{ currentPageTitle }}</span>
-        </div>
-        <div class="topbar-right">
-          <div class="date-badge">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <rect x="1" y="2" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.2"/>
-              <path d="M1 5.5h12M4.5 1v2M9.5 1v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
-            {{ today }}
-          </div>
-          <div class="notif-btn" @click="showNotif = !showNotif">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M9 2a5.5 5.5 0 00-5.5 5.5v3L2 12v1h14v-1l-1.5-1.5v-3A5.5 5.5 0 009 2z"
-                stroke="currentColor" stroke-width="1.4"/>
-              <path d="M7 13a2 2 0 004 0" stroke="currentColor" stroke-width="1.4"/>
-            </svg>
-            <span class="notif-dot" v-if="notifications.length"></span>
-          </div>
-          <select class="posyandu-filter" v-model="selectedPosyandu">
-            <option value="all">Semua Posyandu</option>
-            <option v-for="p in posyanduList" :key="p.id" :value="p.id">{{ p.nama }}</option>
-          </select>
-        </div>
-      </header>
+      <!-- NavBar -->
+      <NavBar
+        :currentPageTitle="currentPageTitle"
+        :today="today"
+        :notifications="notifications"
+        :posyanduList="posyanduList"
+        :activeTab="activeTab"
+        @navigate="setActiveTab"
+      />
 
       <!-- Dashboard Content -->
       <div class="content-area" v-if="activeNav === 'dashboard'">
@@ -246,6 +169,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { createClient } from '@supabase/supabase-js'
+import NavBar from '../components/NavBar.vue'
+import SideNavBar from '../components/SideNavBar.vue'
+import { navItems, reportItems, allNav } from '../data/navigationData.js'
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -257,8 +183,7 @@ const supabase = createClient(
 // ──────────────────────────────────────────────
 const sidebarCollapsed = ref(false)
 const activeNav        = ref('dashboard')
-const selectedPosyandu = ref('all')
-const showNotif        = ref(false)
+const activeTab        = ref(null)
 
 const currentUser = ref({
   nama: 'Admin Baqa',
@@ -270,99 +195,6 @@ const notifications = ref([
   { id: 1, msg: '3 jadwal kegiatan besok' },
   { id: 2, msg: 'Stok vitamin A hampir habis' },
 ])
-
-// ──────────────────────────────────────────────
-// Navigation
-// ──────────────────────────────────────────────
-const navItems = [
-  {
-    id: 'dashboard', label: 'Dashboard',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <rect x="1" y="1" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
-      <rect x="10" y="1" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
-      <rect x="1" y="10" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
-      <rect x="10" y="10" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
-    </svg>`
-  },
-  {
-    id: 'balita', label: 'Data Balita', badge: '248',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <circle cx="9" cy="6" r="3.5" stroke="currentColor" stroke-width="1.4"/>
-      <path d="M2 16c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-    </svg>`
-  },
-  {
-    id: 'bumil', label: 'Ibu Hamil',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <circle cx="9" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/>
-      <path d="M5 10c0 3 1.5 6 4 6s4-3 4-6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-    </svg>`
-  },
-  {
-    id: 'lansia', label: 'Lansia',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <circle cx="9" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/>
-      <path d="M4 17v-3a5 5 0 0110 0v3M9 11v4M7 13h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-    </svg>`
-  },
-  {
-    id: 'imunisasi', label: 'Imunisasi',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path d="M11 3l4 4-8 8-4-4 8-8zM9 5l4 4M2 16l2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`
-  },
-  {
-    id: 'kegiatan', label: 'Kegiatan',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <rect x="2" y="3" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.4"/>
-      <path d="M2 7h14M6 1v4M12 1v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-    </svg>`
-  },
-  {
-    id: 'stok', label: 'Stok & Obat',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <rect x="4" y="2" width="10" height="14" rx="2" stroke="currentColor" stroke-width="1.4"/>
-      <path d="M7 6h4M7 9h4M7 12h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-    </svg>`
-  },
-]
-
-const reportItems = [
-  {
-    id: 'laporan_bulanan', label: 'Laporan Bulanan',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path d="M3 14V5l6-3 6 3v9l-6 3-6-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-      <path d="M9 2v12M3 5l6 3 6-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-    </svg>`
-  },
-  {
-    id: 'pengaturan', label: 'Pengaturan',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <circle cx="9" cy="9" r="2.5" stroke="currentColor" stroke-width="1.4"/>
-      <path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.2 3.2l1.4 1.4M13.4 13.4l1.4 1.4M3.2 14.8l1.4-1.4M13.4 4.6l1.4-1.4"
-        stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-    </svg>`
-  },
-]
-
-const allNav = [...navItems, ...reportItems]
-
-const currentPageTitle = computed(() =>
-  allNav.find(n => n.id === activeNav.value)?.label ?? 'Dashboard'
-)
-const currentNavIcon = computed(() =>
-  allNav.find(n => n.id === activeNav.value)?.icon ?? ''
-)
-
-const userInitials = computed(() =>
-  currentUser.value.nama.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
-)
-
-const roleLabel = computed(() => ({
-  admin: 'Administrator',
-  kader: 'Kader Posyandu',
-  bidan: 'Bidan',
-}[currentUser.value.role] ?? 'Pengguna'))
 
 // ──────────────────────────────────────────────
 // Data (dummy – replace with Supabase queries)
@@ -381,6 +213,26 @@ const posyanduList = ref([
   { id: '7', nama: 'Posyandu Kenanga I' },
   { id: '8', nama: 'Posyandu Kenanga II' },
 ])
+
+// ──────────────────────────────────────────────
+// Computed Properties
+// ──────────────────────────────────────────────
+const currentPageTitle = computed(() =>
+  allNav.find(n => n.id === activeNav.value)?.label ?? 'Dashboard'
+)
+const currentNavIcon = computed(() =>
+  allNav.find(n => n.id === activeNav.value)?.icon ?? ''
+)
+
+const userInitials = computed(() =>
+  currentUser.value.nama.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+)
+
+const roleLabel = computed(() => ({
+  admin: 'Administrator',
+  kader: 'Kader Posyandu',
+  bidan: 'Bidan',
+}[currentUser.value.role] ?? 'Pengguna'))
 
 const statCards = ref([
   { label: 'Total Balita',    value: '248', icon: iconBalita(),   color: '#2F9D94', trend:  5 },
@@ -468,6 +320,13 @@ async function fetchDashboardData() {
 fetchDashboardData() // Aktifkan baris ini saat Supabase siap
 
 // ──────────────────────────────────────────────
+// Navigation
+// ──────────────────────────────────────────────
+function setActiveTab(posyanduId) {
+  activeTab.value = posyanduId
+}
+
+// ──────────────────────────────────────────────
 // Auth
 // ──────────────────────────────────────────────
 async function handleLogout() {
@@ -520,7 +379,7 @@ function iconKegiatan() {
   --border:     #E2E8ED;
   --sidebar-w:  240px;
   --sidebar-collapsed: 68px;
-  --topbar-h:   64px;
+  --NavBar-h:   64px;
 }
 
 /* ──────────────────────────────────────────────
@@ -530,174 +389,10 @@ function iconKegiatan() {
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background: var(--alabaster);
+  background: #F7F6F2;
   font-family: 'Segoe UI', system-ui, sans-serif;
-  color: var(--text-dark);
+  color: #063154;
 }
-
-/* ──────────────────────────────────────────────
-   Sidebar
-   ────────────────────────────────────────────── */
-.sidebar {
-  width: var(--sidebar-w);
-  min-width: var(--sidebar-w);
-  background: var(--sapphire);
-  display: flex;
-  flex-direction: column;
-  transition: width 0.25s ease, min-width 0.25s ease;
-  overflow: hidden;
-  position: relative;
-  z-index: 10;
-}
-.sidebar.collapsed {
-  width: var(--sidebar-collapsed);
-  min-width: var(--sidebar-collapsed);
-}
-
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.logo-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  overflow: hidden;
-}
-.logo-text {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.logo-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: #fff;
-  white-space: nowrap;
-}
-.logo-sub {
-  font-size: 10px;
-  color: var(--heather);
-  white-space: nowrap;
-}
-.collapse-btn {
-  background: none;
-  border: none;
-  color: var(--heather);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  flex-shrink: 0;
-  transition: background 0.15s;
-}
-.collapse-btn:hover { background: rgba(255,255,255,0.1); }
-
-.sidebar-nav {
-  flex: 1;
-  padding: 12px 8px;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-.nav-group { margin-bottom: 24px; }
-.nav-label {
-  display: block;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: var(--heather);
-  opacity: 0.6;
-  padding: 0 8px 6px;
-  white-space: nowrap;
-}
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  color: rgba(255,255,255,0.65);
-  font-size: 13px;
-  transition: all 0.15s;
-  white-space: nowrap;
-  text-decoration: none;
-  position: relative;
-}
-.nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
-.nav-item.active {
-  background: var(--scooter);
-  color: #fff;
-}
-.nav-icon { flex-shrink: 0; display: flex; align-items: center; }
-.nav-text { flex: 1; overflow: hidden; text-overflow: ellipsis; }
-.nav-badge {
-  background: var(--scooter);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 20px;
-  flex-shrink: 0;
-}
-.nav-item.active .nav-badge { background: rgba(255,255,255,0.25); }
-
-.sidebar-footer {
-  padding: 12px 10px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-}
-.user-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.06);
-}
-.user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--scooter);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
-}
-.user-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.user-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.user-role {
-  font-size: 10px;
-  color: var(--heather);
-}
-.logout-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--heather);
-  padding: 4px;
-  border-radius: 4px;
-  transition: color 0.15s;
-}
-.logout-btn:hover { color: #fff; }
 
 /* ──────────────────────────────────────────────
    Main Content
@@ -709,81 +404,6 @@ function iconKegiatan() {
   overflow: hidden;
 }
 
-/* Topbar */
-.topbar {
-  height: var(--topbar-h);
-  background: var(--scooter);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  gap: 16px;
-  flex-shrink: 0;
-}
-.topbar-left {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.page-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0;
-}
-.breadcrumb {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.7);
-}
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.date-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.15);
-  padding: 6px 12px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-.notif-btn {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.7);
-  transition: background 0.15s;
-}
-.notif-btn:hover { background: rgba(255, 255, 255, 0.2); }
-.notif-dot {
-  position: absolute;
-  top: 6px; right: 6px;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #E55353;
-  border: 2px solid var(--scooter);
-}
-.posyandu-filter {
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 7px 12px;
-  font-size: 12px;
-  color: var(--sapphire);
-  background: rgba(255, 255, 255, 0.95);
-  cursor: pointer;
-  outline: none;
-}
-.posyandu-filter:focus { border-color: rgba(255, 255, 255, 0.5); }
 
 /* Content Area */
 .content-area {
@@ -804,9 +424,9 @@ function iconKegiatan() {
   gap: 16px;
 }
 .stat-card {
-  background: var(--white);
+  background: #ffffff;
   border-radius: 14px;
-  border: 1px solid var(--border);
+  border: 1px solid #E2E8ED;
   padding: 18px 20px;
   display: flex;
   align-items: center;
@@ -828,7 +448,7 @@ function iconKegiatan() {
   width: 46px;
   height: 46px;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--accent) 10%, var(--alabaster));
+  background: color-mix(in srgb, var(--accent) 10%, #F7F6F2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -844,12 +464,12 @@ function iconKegiatan() {
 .stat-value {
   font-size: 26px;
   font-weight: 800;
-  color: var(--sapphire);
+  color: #063154;
   line-height: 1;
 }
 .stat-label {
   font-size: 11px;
-  color: var(--text-muted);
+  color: #6B7B8A;
   font-weight: 500;
 }
 .stat-trend {
@@ -874,8 +494,8 @@ function iconKegiatan() {
   gap: 16px;
 }
 .chart-card {
-  background: var(--white);
-  border: 1px solid var(--border);
+  background: #ffffff;
+  border: 1px solid #E2E8ED;
   border-radius: 14px;
   padding: 20px;
 }
@@ -888,16 +508,16 @@ function iconKegiatan() {
 .card-header h3 {
   font-size: 14px;
   font-weight: 700;
-  color: var(--sapphire);
+  color: #063154;
   margin: 0;
 }
-.card-sub { font-size: 11px; color: var(--text-muted); }
+.card-sub { font-size: 11px; color: #6B7B8A; }
 .chart-legend {
   display: flex;
   align-items: center;
   gap: 12px;
   font-size: 11px;
-  color: var(--text-muted);
+  color: #6B7B8A;
 }
 .legend-dot {
   display: inline-block;
@@ -934,12 +554,12 @@ function iconKegiatan() {
   transition: height 0.4s ease;
   cursor: pointer;
 }
-.bar.balita { background: var(--scooter); }
-.bar.bumil  { background: var(--bluelagoon); }
-.bar.lansia { background: var(--heather); }
+.bar.balita { background: #2F9D94; }
+.bar.bumil  { background: #025F67; }
+.bar.lansia { background: #BCC5CC; }
 .bar-label {
   font-size: 9px;
-  color: var(--text-muted);
+  color: #6B7B8A;
   margin-top: 4px;
 }
 
@@ -960,7 +580,7 @@ function iconKegiatan() {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: var(--text-dark);
+  color: #063154;
 }
 .legend-row .legend-dot {
   width: 10px;
@@ -972,7 +592,7 @@ function iconKegiatan() {
   margin-left: auto;
   font-weight: 700;
   font-size: 13px;
-  color: var(--sapphire);
+  color: #063154;
 }
 
 /* ──────────────────────────────────────────────
@@ -986,8 +606,8 @@ function iconKegiatan() {
 
 /* Posyandu Section */
 .posyandu-section, .schedule-section {
-  background: var(--white);
-  border: 1px solid var(--border);
+  background: #ffffff;
+  border: 1px solid #E2E8ED;
   border-radius: 14px;
   padding: 20px;
 }
@@ -1000,12 +620,12 @@ function iconKegiatan() {
 .section-header h3 {
   font-size: 14px;
   font-weight: 700;
-  color: var(--sapphire);
+  color: #063154;
   margin: 0;
 }
 .see-all {
   font-size: 12px;
-  color: var(--scooter);
+  color: #2F9D94;
   cursor: pointer;
   font-weight: 600;
 }
@@ -1015,14 +635,14 @@ function iconKegiatan() {
   gap: 12px;
 }
 .posyandu-card {
-  border: 1px solid var(--border);
+  border: 1px solid #E2E8ED;
   border-radius: 10px;
   padding: 14px;
   transition: border-color 0.2s, box-shadow 0.2s;
   cursor: pointer;
 }
 .posyandu-card:hover {
-  border-color: var(--scooter);
+  border-color: #2F9D94;
   box-shadow: 0 2px 8px rgba(47,157,148,0.1);
 }
 .posyandu-card-top {
@@ -1034,7 +654,7 @@ function iconKegiatan() {
 .posyandu-num {
   font-size: 20px;
   font-weight: 800;
-  color: var(--scooter);
+  color: #2F9D94;
   line-height: 1;
 }
 .posyandu-status {
@@ -1050,18 +670,18 @@ function iconKegiatan() {
 .posyandu-name {
   font-size: 12px;
   font-weight: 700;
-  color: var(--sapphire);
+  color: #063154;
   margin-bottom: 2px;
 }
 .posyandu-ketua {
   font-size: 10px;
-  color: var(--text-muted);
+  color: #6B7B8A;
   margin-bottom: 10px;
 }
 .posyandu-stats {
   display: flex;
   gap: 0;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #E2E8ED;
   padding-top: 10px;
 }
 .pstat {
@@ -1074,11 +694,11 @@ function iconKegiatan() {
 .pstat span {
   font-size: 16px;
   font-weight: 800;
-  color: var(--bluelagoon);
+  color: #025F67;
 }
 .pstat label {
   font-size: 9px;
-  color: var(--text-muted);
+  color: #6B7B8A;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1095,17 +715,17 @@ function iconKegiatan() {
   gap: 12px;
   padding: 10px;
   border-radius: 8px;
-  border: 1px solid var(--border);
+  border: 1px solid #E2E8ED;
   transition: border-color 0.15s;
 }
-.schedule-item:hover { border-color: var(--scooter); }
+.schedule-item:hover { border-color: #2F9D94; }
 .schedule-date {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 36px;
   flex-shrink: 0;
-  background: var(--sapphire);
+  background: #063154;
   border-radius: 6px;
   padding: 4px 0;
 }
@@ -1117,7 +737,7 @@ function iconKegiatan() {
 }
 .sch-mon {
   font-size: 9px;
-  color: var(--heather);
+  color: #BCC5CC;
   text-transform: uppercase;
 }
 .schedule-info {
@@ -1130,14 +750,14 @@ function iconKegiatan() {
 .sch-title {
   font-size: 12px;
   font-weight: 600;
-  color: var(--sapphire);
+  color: #063154;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .sch-posyandu {
   font-size: 10px;
-  color: var(--text-muted);
+  color: #6B7B8A;
 }
 .sch-badge {
   font-size: 9px;
@@ -1148,9 +768,9 @@ function iconKegiatan() {
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
-.sch-badge.timbang { background: #E6F7F6; color: var(--scooter); }
+.sch-badge.timbang { background: #E6F7F6; color: #2F9D94; }
 .sch-badge.imun    { background: #EEF0FF; color: #5C6BC0; }
-.sch-badge.lansia  { background: #F0F4F8; color: var(--bluelagoon); }
+.sch-badge.lansia  { background: #F0F4F8; color: #025F67; }
 .sch-badge.bumil   { background: #FFF8E6; color: #F59E0B; }
 
 /* ──────────────────────────────────────────────
@@ -1161,10 +781,10 @@ function iconKegiatan() {
   justify-content: center;
   gap: 12px;
   text-align: center;
-  color: var(--text-muted);
+  color: #6B7B8A;
 }
 .placeholder-icon { opacity: 0.3; transform: scale(2); }
-.placeholder-page h2 { font-size: 20px; color: var(--sapphire); margin: 0; }
+.placeholder-page h2 { font-size: 20px; color: #063154; margin: 0; }
 .placeholder-page p  { font-size: 13px; }
 
 /* ──────────────────────────────────────────────
@@ -1180,6 +800,6 @@ function iconKegiatan() {
 }
 @media (max-width: 640px) {
   .stats-grid  { grid-template-columns: 1fr; }
-  .topbar-right .date-badge { display: none; }
+  .NavBar-right .date-badge { display: none; }
 }
 </style>
