@@ -165,17 +165,26 @@
 
       </div>
 
-      <!-- Placeholder pages -->
+      <!-- DATA BALITA PAGE -->
+      <div class="content-area" v-else-if="activeNav === 'balita'">
+        <DataBalita
+          :activePosyanduId="activeTab"
+          :activePosyanduNama="posyanduList.find(p => p.id === activeTab)?.nama ?? ''"
+          :posyanduKeyMap="posyanduKeyMap"
+          :posyanduTableMap="posyanduTableMap"
+        />
+      </div>
+
+      <!-- PLACEHOLDER PAGES (untuk halaman lain yang belum jadi) -->
       <div class="content-area placeholder-page" v-else>
-        <!-- No Posyandu Selected State -->
-        <div class="no-posyandu-selected" v-if="['balita', 'bumil', 'lansia', 'imunisasi', 'kegiatan', 'stok'].includes(activeNav) && activeTab === null">
+        <div class="no-posyandu-selected"
+          v-if="['bumil','lansia','imunisasi','kegiatan','stok'].includes(activeNav) && activeTab === null">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" fill="#BCC5CC"/>
           </svg>
           <h2>Tidak Ada Data yang Akan Ditampilkan</h2>
           <p>Silahkan memilih posyandu dari tab di atas untuk melihat data</p>
         </div>
-        <!-- Development Page State -->
         <template v-else>
           <div class="placeholder-icon" v-html="currentNavIcon"></div>
           <h2>{{ currentPageTitle }}</h2>
@@ -205,6 +214,7 @@ import { ref, computed } from 'vue'
 import { createClient } from '@supabase/supabase-js'
 import NavBar from '../components/NavBar.vue'
 import SideNavBar from '../components/SideNavBar.vue'
+import DataBalita from './DataBalita.vue'
 import { navItems, reportItems, allNav } from '../data/navigationData.js'
 import '../assets/PageHome.css'
 
@@ -212,6 +222,24 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
 )
+
+const POSYANDU_VAULT_KEYS = [
+  'kacang_hijau', 'labu',
+  'lobak', 'seledri',
+  'singkil', 'terong',
+  'tomat', 'wortel',
+]
+
+const POSYANDU_TABLES = [
+  'balita_kacang_hijau',  'balita_labu',
+  'balita_lobak',         'balita_seledri',
+  'balita_singkil',       'balita_terong',
+  'balita_tomat',         'balita_wortel',
+]
+
+const posyanduKeyMap   = ref({})
+const posyanduTableMap = ref({})
+
 
 // ──────────────────────────────────────────────
 // State
@@ -359,16 +387,16 @@ async function fetchDashboardData() {
 
     // ── 3. Hitung total balita per posyandu dari tabel individual ──
     const table_mappings = [
-      'balita_melati_1', 'balita_melati_2',
-      'balita_anggrek_1', 'balita_anggrek_2',
-      'balita_mawar_1', 'balita_mawar_2',
-      'balita_kenanga_1', 'balita_kenanga_2'
+      'balita_kacang_hijau', 'balita_labu',
+      'balita_lobak', 'balita_seledri',
+      'balita_singkil', 'balita_terong',
+      'balita_tomat', 'balita_wortel'
     ]
     const posyandu_names = [
-      'Posyandu Melati I', 'Posyandu Melati II',
-      'Posyandu Anggrek I', 'Posyandu Anggrek II',
-      'Posyandu Mawar I', 'Posyandu Mawar II',
-      'Posyandu Kenanga I', 'Posyandu Kenanga II'
+      'Posyandu Kacang Hijau', 'Posyandu Labu',
+      'Posyandu Lobak', 'Posyandu Seledri',
+      'Posyandu Singkil', 'Posyandu Terong',
+      'Posyandu Tomat', 'Posyandu Wortel'
     ]
 
     const balitaCounts = {}
@@ -398,6 +426,17 @@ async function fetchDashboardData() {
 
     // Isi posyanduList untuk NavBar dropdown
     posyanduList.value = ringkasan.map(p => ({ id: p.id, nama: p.nama }))
+
+    // Bangun mapping sesuai urutan hasil query (order by nama = urutan abjad)
+    // Urutan: Kacang Hijau, Labu, Lobak, Seledri, Singkil, Terong, Tomat, Wortel
+    const newKeyMap   = {}
+    const newTableMap = {}
+    ringkasan.forEach((p, i) => {
+      newKeyMap[p.id]   = POSYANDU_VAULT_KEYS[i]
+      newTableMap[p.id] = POSYANDU_TABLES[i]
+    })
+    posyanduKeyMap.value   = newKeyMap
+    posyanduTableMap.value = newTableMap
 
     // ── 4. Total lintas posyandu untuk stat cards ─
     const totalBumil    = ringkasan.reduce((sum, p) => sum + (p.total_bumil   ?? 0), 0)
