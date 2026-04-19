@@ -81,7 +81,7 @@
     </transition>
 
     <!-- ═══════════════════════════════════════════════
-         HALAMAN DATA BALITA (setelah unlock)
+         HALAMAN KLASIFIKASI BALITA (setelah unlock)
          ═══════════════════════════════════════════════ -->
     <transition name="fade" mode="out-in">
       <div v-if="activePosyanduId !== null && isUnlocked" class="balita-page" key="page">
@@ -107,12 +107,6 @@
               <option value="Laki-laki">Laki-laki</option>
               <option value="Perempuan">Perempuan</option>
             </select>
-            <button class="btn-add" @click="openModal('add')">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-              </svg>
-              Tambah Balita
-            </button>
             <button class="btn-lock" @click="lockPage" title="Kunci halaman">
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
                 <path d="M4.5 6.5V4a3 3 0 016 0v2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
@@ -126,7 +120,7 @@
         <!-- ── Loading ── -->
         <div class="table-loading" v-if="tableLoading">
           <div class="spinner-lg"></div>
-          <span>Memuat data balita...</span>
+          <span>Memuat data klasifikasi balita...</span>
         </div>
 
         <!-- ── Error ── -->
@@ -145,7 +139,7 @@
             <circle cx="20" cy="20" r="18" stroke="#BCC5CC" stroke-width="1.5"/>
             <path d="M13 20h14M20 13v14" stroke="#BCC5CC" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
-          <p>{{ searchQuery || filterGender ? 'Tidak ada data yang cocok dengan filter' : 'Belum ada data balita. Klik "Tambah Balita" untuk mulai.' }}</p>
+          <p>{{ searchQuery || filterGender ? 'Tidak ada data yang cocok dengan filter' : 'Belum ada data balita terdaftar.' }}</p>
         </div>
 
         <!-- ── Table ── -->
@@ -155,11 +149,11 @@
               <tr>
                 <th class="col-no">No</th>
                 <th class="col-nama">Nama Balita</th>
-                <th class="col-ibu hide-sm">Nama Ibu</th>
-                <th class="col-lahir hide-sm">Tanggal Lahir</th>
-                <th class="col-usia">Usia</th>
-                <th class="col-jk hide-xs">Jenis Kelamin</th>
-                <th class="col-aksi">Aksi</th>
+                <th class="col-ibu">Nama Ibu</th>
+                <th class="col-jk">Jenis Kelamin</th>
+                <th class="col-tb">Tinggi Badan (cm)</th>
+                <th class="col-bb">Berat Badan (kg)</th>
+                <th class="col-bmi">Status BMI</th>
               </tr>
             </thead>
             <tbody>
@@ -175,27 +169,20 @@
                     </div>
                   </div>
                 </td>
-                <td class="col-ibu hide-sm">{{ b.nama_ibu }}</td>
-                <td class="col-lahir hide-sm">{{ formatDate(b.tanggal_lahir) }}</td>
-                <td class="col-usia">{{ calcAge(b.tanggal_lahir) }}</td>
-                <td class="col-jk hide-xs">
+                <td class="col-ibu">{{ b.nama_ibu }}</td>
+                <td class="col-jk">
                   <span class="jk-badge" :class="b.jenis_kelamin === 'Laki-laki' ? 'laki' : 'perempuan'">
                     {{ b.jenis_kelamin === 'Laki-laki' ? 'L' : 'P' }}
                   </span>
                 </td>
-                <td class="col-aksi">
-                  <div class="aksi-btns">
-                    <button class="btn-icon edit" @click="openModal('edit', b)" title="Edit">
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
-                    <button class="btn-icon delete" @click="confirmDelete(b)" title="Hapus">
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M2 4h10M5 4V2h4v2M3 4l1 8h6l1-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
+                <td class="col-tb">{{ b.tinggi_badan ?? '–' }}</td>
+                <td class="col-bb">{{ b.berat_badan ?? '–' }}</td>
+                <td class="col-bmi">
+                  <span v-if="b.berat_badan && b.tinggi_badan" class="bmi-badge" :class="getBMIStatusClass(b)">
+                    {{ getBMIStatus(b) }}
+                    <small>({{ calculateBMI(b).toFixed(1) }})</small>
+                  </span>
+                  <span v-else class="bmi-badge">–</span>
                 </td>
               </tr>
             </tbody>
@@ -203,123 +190,6 @@
         </div>
       </div>
     </transition>
-
-    <!-- ═══════════════════════════════════════════════
-         MODAL TAMBAH / EDIT
-         ═══════════════════════════════════════════════ -->
-    <teleport to="body">
-      <transition name="modal-fade">
-        <div class="modal-overlay" v-if="showModal" @click.self="closeModal">
-          <div class="modal-box">
-            <div class="modal-header">
-              <h3>{{ modalMode === 'add' ? 'Tambah Data Balita' : 'Edit Data Balita' }}</h3>
-              <button class="modal-close" @click="closeModal">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </button>
-            </div>
-
-            <div class="modal-body">
-              <div class="form-grid">
-                <!-- Nama Balita -->
-                <div class="form-group full">
-                  <label>Nama Balita <span class="req">*</span></label>
-                  <input v-model="form.nama_lengkap" placeholder="Masukkan nama lengkap balita" class="form-input" :class="{ 'is-invalid': formErrors.nama_lengkap }"/>
-                  <span class="field-error" v-if="formErrors.nama_lengkap">{{ formErrors.nama_lengkap }}</span>
-                </div>
-
-                <!-- Tanggal Lahir -->
-                <div class="form-group">
-                  <label>Tanggal Lahir <span class="req">*</span></label>
-                  <input type="date" v-model="form.tanggal_lahir" class="form-input" :class="{ 'is-invalid': formErrors.tanggal_lahir }"/>
-                  <span class="field-error" v-if="formErrors.tanggal_lahir">{{ formErrors.tanggal_lahir }}</span>
-                </div>
-
-                <!-- Jenis Kelamin -->
-                <div class="form-group">
-                  <label>Jenis Kelamin <span class="req">*</span></label>
-                  <select v-model="form.jenis_kelamin" class="form-input" :class="{ 'is-invalid': formErrors.jenis_kelamin }">
-                    <option value="">Pilih...</option>
-                    <option value="Laki-laki">Laki-laki</option>
-                    <option value="Perempuan">Perempuan</option>
-                  </select>
-                  <span class="field-error" v-if="formErrors.jenis_kelamin">{{ formErrors.jenis_kelamin }}</span>
-                </div>
-
-                <!-- Divider Ibu -->
-                <div class="form-divider full">
-                  <span>Data Orang Tua</span>
-                </div>
-
-                <!-- Nama Ibu -->
-                <div class="form-group full">
-                  <label>Nama Ibu <span class="req">*</span></label>
-                  <input v-model="form.nama_ibu" placeholder="Nama ibu kandung" class="form-input" :class="{ 'is-invalid': formErrors.nama_ibu }"/>
-                  <span class="field-error" v-if="formErrors.nama_ibu">{{ formErrors.nama_ibu }}</span>
-                </div>
-
-                <!-- Divider Input -->
-                <div class="form-divider full">
-                  <span>Data Input</span>
-                </div>
-
-                <!-- Pembuat/Kader -->
-                <div class="form-group full">
-                  <label>Pembuat/Kader <span class="req">*</span></label>
-                  <input v-model="form.created_by" placeholder="Nama kader/pembuat" class="form-input" :class="{ 'is-invalid': formErrors.created_by }"/>
-                  <span class="field-error" v-if="formErrors.created_by">{{ formErrors.created_by }}</span>
-                </div>
-
-              </div>
-            </div>
-
-            <div class="modal-footer">
-              <button class="btn-cancel" @click="closeModal" :disabled="formLoading">Batal</button>
-              <button class="btn-save" @click="saveBalita" :disabled="formLoading">
-                <span v-if="formLoading" class="spinner"></span>
-                <span v-else>{{ modalMode === 'add' ? 'Simpan Data' : 'Perbarui Data' }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </teleport>
-
-    <!-- ═══════════════════════════════════════════════
-         MODAL KONFIRMASI HAPUS
-         ═══════════════════════════════════════════════ -->
-    <teleport to="body">
-      <transition name="modal-fade">
-        <div class="modal-overlay" v-if="showDeleteModal" @click.self="showDeleteModal = false">
-          <div class="modal-box modal-sm">
-            <div class="modal-header danger">
-              <h3>Hapus Data Balita</h3>
-              <button class="modal-close" @click="showDeleteModal = false">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </button>
-            </div>
-            <div class="modal-body delete-body">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <circle cx="24" cy="24" r="22" fill="#FEF0F0"/>
-                <path d="M24 14v12M24 32h.01" stroke="#E55353" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              <p>Apakah kamu yakin ingin menghapus data <strong>{{ deleteTarget?.nama_lengkap }}</strong>?</p>
-              <p class="delete-warn">Tindakan ini tidak dapat dibatalkan.</p>
-            </div>
-            <div class="modal-footer">
-              <button class="btn-cancel" @click="showDeleteModal = false" :disabled="formLoading">Batal</button>
-              <button class="btn-delete" @click="deleteBalita" :disabled="formLoading">
-                <span v-if="formLoading" class="spinner"></span>
-                <span v-else>Ya, Hapus</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </teleport>
 
     <!-- Toast Notifikasi -->
     <teleport to="body">
@@ -355,12 +225,10 @@ const supabase = createClient(
 const props = defineProps({
   activePosyanduId:   { type: [String, null], default: null },
   activePosyanduNama: { type: String, default: '' },
-  // Map dari posyandu id → key vault (contoh: 'singkil', 'lobak', dll)
   posyanduKeyMap: {
     type: Object,
     default: () => ({})
   },
-  // Map dari posyandu id → nama tabel (contoh: 'balita_singkil', 'balita_lobak', dll)
   posyanduTableMap: {
     type: Object,
     default: () => ({})
@@ -369,9 +237,8 @@ const props = defineProps({
 
 // ─────────────────────────────────────────────────────
 // PASSWORD GATE STATE
-// Menyimpan unlock state per posyandu di session memory
-// -─────────────────────────────────────────────────────
-const unlockedMap = ref({})   // { [posyanduId]: true }
+// ─────────────────────────────────────────────────────
+const unlockedMap = ref({})
 const pwInput     = ref('')
 const showPw      = ref(false)
 const pwError     = ref('')
@@ -403,7 +270,6 @@ async function submitPassword() {
     const posyanduKey = props.posyanduKeyMap[props.activePosyanduId]
     if (!posyanduKey) throw new Error('Posyandu tidak dikenali')
 
-    // Panggil RPC function di Supabase (SECURITY DEFINER — password aman)
     const { data, error } = await supabase.rpc('verify_posyandu_password', {
       p_posyandu_key: posyanduKey,
       p_password:     pwInput.value,
@@ -413,8 +279,6 @@ async function submitPassword() {
       console.error('[submitPassword] RPC Error:', error)
       throw new Error(`Gagal verifikasi: ${error.message}`)
     }
-
-    console.log('[submitPassword] RPC Result:', data)
 
     if (data === true) {
       unlockedMap.value[props.activePosyanduId] = true
@@ -467,17 +331,16 @@ const filteredBalita = computed(() => {
 
 async function fetchBalita() {
   if (!props.activePosyanduId) return
-  const tableBalita = props.posyanduTableMap[props.activePosyanduId]
-  if (!tableBalita) return
+  const tableName = props.posyanduTableMap[props.activePosyanduId]
+  if (!tableName) return
 
   tableLoading.value = true
   tableError.value   = null
   try {
     const { data, error } = await supabase
-      .from(tableBalita)
+      .from(tableName)
       .select('*')
       .order('nama_lengkap')
-
     if (error) throw error
     balitaList.value = data ?? []
   } catch (err) {
@@ -488,130 +351,11 @@ async function fetchBalita() {
 }
 
 // ─────────────────────────────────────────────────────
-// MODAL / FORM
-// ─────────────────────────────────────────────────────
-const showModal  = ref(false)
-const modalMode  = ref('add')   // 'add' | 'edit'
-const formLoading = ref(false)
-const formErrors  = ref({})
-const editingId   = ref(null)
-
-const emptyForm = () => ({
-  nama_lengkap: '',
-  tanggal_lahir: '',
-  jenis_kelamin: '',
-  nama_ibu: '',
-  created_by: '',
-})
-const form = ref(emptyForm())
-
-function openModal(mode, data = null) {
-  modalMode.value  = mode
-  formErrors.value = {}
-  if (mode === 'edit' && data) {
-    editingId.value = data.id
-    form.value = {
-      nama_lengkap:   data.nama_lengkap   ?? '',
-      tanggal_lahir:  data.tanggal_lahir  ?? '',
-      jenis_kelamin:  data.jenis_kelamin  ?? '',
-      nama_ibu:       data.nama_ibu       ?? '',
-      created_by:     data.created_by     ?? '',
-    }
-  } else {
-    editingId.value = null
-    form.value = emptyForm()
-  }
-  showModal.value = true
-}
-
-function closeModal() {
-  showModal.value  = false
-  formErrors.value = {}
-}
-
-function validateForm() {
-  const errors = {}
-  if (!form.value.nama_lengkap?.trim())  errors.nama_lengkap   = 'Nama balita wajib diisi'
-  if (!form.value.tanggal_lahir)        errors.tanggal_lahir = 'Tanggal lahir wajib diisi'
-  if (!form.value.jenis_kelamin)        errors.jenis_kelamin = 'Jenis kelamin wajib dipilih'
-  if (!form.value.nama_ibu?.trim())     errors.nama_ibu      = 'Nama ibu wajib diisi'
-  if (!form.value.created_by?.trim())   errors.created_by    = 'Pembuat/kader wajib diisi'
-  formErrors.value = errors
-  return Object.keys(errors).length === 0
-}
-
-async function saveBalita() {
-  if (!validateForm()) return
-  const tableBalita = props.posyanduTableMap[props.activePosyanduId]
-  if (!tableBalita) return
-
-  formLoading.value = true
-  try {
-    const payload = {
-      nama_lengkap: form.value.nama_lengkap,
-      jenis_kelamin: form.value.jenis_kelamin,
-      tanggal_lahir: form.value.tanggal_lahir,
-      nama_ibu: form.value.nama_ibu,
-      created_by: form.value.created_by,
-    }
-
-    if (modalMode.value === 'add') {
-      const { error } = await supabase.from(tableBalita).insert([payload])
-      if (error) throw error
-      showToast('Data balita berhasil ditambahkan', 'success')
-    } else {
-      const { error } = await supabase.from(tableBalita).update(payload).eq('id', editingId.value)
-      if (error) throw error
-      showToast('Data balita berhasil diperbarui', 'success')
-    }
-
-    closeModal()
-    await fetchBalita()
-  } catch (err) {
-    console.error(err)
-    showToast('Gagal menyimpan: ' + (err.message ?? err), 'error')
-  } finally {
-    formLoading.value = false
-  }
-}
-
-// ─────────────────────────────────────────────────────
-// DELETE
-// ─────────────────────────────────────────────────────
-const showDeleteModal = ref(false)
-const deleteTarget    = ref(null)
-
-function confirmDelete(b) {
-  deleteTarget.value    = b
-  showDeleteModal.value = true
-}
-
-async function deleteBalita() {
-  const tableBalita = props.posyanduTableMap[props.activePosyanduId]
-  if (!tableBalita || !deleteTarget.value) return
-  formLoading.value = true
-  try {
-    // Delete dari balita_[posyandu] — CASCADE otomatis delete hasil_penimbangan
-    const { error } = await supabase
-      .from(tableBalita)
-      .delete()
-      .eq('id', deleteTarget.value.id)
-    if (error) throw error
-    showToast('Data berhasil dihapus', 'success')
-    showDeleteModal.value = false
-    await fetchBalita()
-  } catch (err) {
-    showToast('Gagal menghapus: ' + (err.message ?? err), 'error')
-  } finally {
-    formLoading.value = false
-  }
-}
-
-// ─────────────────────────────────────────────────────
 // TOAST
 // ─────────────────────────────────────────────────────
 const toast = ref({ show: false, msg: '', type: 'success' })
 let toastTimer = null
+// eslint-disable-next-line no-unused-vars
 function showToast(msg, type = 'success') {
   clearTimeout(toastTimer)
   toast.value = { show: true, msg, type }
@@ -621,11 +365,13 @@ function showToast(msg, type = 'success') {
 // ─────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars
 function formatDate(d) {
   if (!d) return '–'
   return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+// eslint-disable-next-line no-unused-vars
 function calcAge(dob) {
   if (!dob) return '–'
   const today  = new Date()
@@ -633,5 +379,31 @@ function calcAge(dob) {
   const months = (today.getFullYear() - birth.getFullYear()) * 12 + (today.getMonth() - birth.getMonth())
   if (months < 24) return `${months} bln`
   return `${Math.floor(months / 12)} thn`
+}
+
+// ─────────────────────────────────────────────────────
+// BMI CALCULATION & STATUS
+// ─────────────────────────────────────────────────────
+function calculateBMI(balita) {
+  if (!balita.berat_badan || !balita.tinggi_badan) return 0
+  // BMI = berat_badan (kg) / (tinggi_badan (cm) / 100)^2
+  const tinggiMeter = balita.tinggi_badan / 100
+  return balita.berat_badan / (tinggiMeter * tinggiMeter)
+}
+
+function getBMIStatus(balita) {
+  const bmi = calculateBMI(balita)
+  if (bmi < 18.5) return 'Kurus'
+  if (bmi < 25) return 'Normal'
+  if (bmi < 30) return 'Gemuk'
+  return 'Obese'
+}
+
+function getBMIStatusClass(balita) {
+  const bmi = calculateBMI(balita)
+  if (bmi < 18.5) return 'kurus'
+  if (bmi < 25) return 'normal'
+  if (bmi < 30) return 'gemuk'
+  return 'obese'
 }
 </script>

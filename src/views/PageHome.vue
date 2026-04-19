@@ -79,7 +79,6 @@
               <div class="chart-legend">
                 <span class="legend-dot" style="background:#2F9D94"></span> Balita
                 <span class="legend-dot" style="background:#025F67"></span> Bumil
-                <span class="legend-dot" style="background:#BCC5CC"></span> Lansia
               </div>
             </div>
             <div class="bar-chart">
@@ -89,8 +88,6 @@
                     :title="`Balita: ${m.balita}`"></div>
                   <div class="bar bumil" :style="{ height: (m.bumil/maxVal*120)+'px' }"
                     :title="`Bumil: ${m.bumil}`"></div>
-                  <div class="bar lansia" :style="{ height: (m.lansia/maxVal*120)+'px' }"
-                    :title="`Lansia: ${m.lansia}`"></div>
                 </div>
                 <span class="bar-label">{{ m.label }}</span>
               </div>
@@ -155,7 +152,6 @@
                 <div class="posyandu-stats">
                   <div class="pstat"><span>{{ p.balita }}</span><label>Balita</label></div>
                   <div class="pstat"><span>{{ p.bumil }}</span><label>Bumil</label></div>
-                  <div class="pstat"><span>{{ p.lansia }}</span><label>Lansia</label></div>
                 </div>
               </div>
               </template>
@@ -175,10 +171,30 @@
         />
       </div>
 
+      <!-- HASIL PENIMBANGAN PAGE -->
+      <div class="content-area" v-else-if="activeNav === 'penimbangan'">
+        <HasilPenimbangan
+          :activePosyanduId="activeTab"
+          :activePosyanduNama="posyanduList.find(p => p.id === activeTab)?.nama ?? ''"
+          :posyanduKeyMap="posyanduKeyMap"
+          :posyanduTableMap="posyanduTableMap"
+        />
+      </div>
+
+      <!-- KLASIFIKASI BALITA PAGE -->
+      <div class="content-area" v-else-if="activeNav === 'klasifikasi'">
+        <KlasifikasiBalita
+          :activePosyanduId="activeTab"
+          :activePosyanduNama="posyanduList.find(p => p.id === activeTab)?.nama ?? ''"
+          :posyanduKeyMap="posyanduKeyMap"
+          :posyanduTableMap="posyanduTableMap"
+        />
+      </div>
+
       <!-- PLACEHOLDER PAGES (untuk halaman lain yang belum jadi) -->
       <div class="content-area placeholder-page" v-else>
         <div class="no-posyandu-selected"
-          v-if="['bumil','lansia','imunisasi','kegiatan','stok'].includes(activeNav) && activeTab === null">
+          v-if="['bumil','imunisasi','kegiatan','stok'].includes(activeNav) && activeTab === null">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" fill="#BCC5CC"/>
           </svg>
@@ -215,6 +231,8 @@ import { createClient } from '@supabase/supabase-js'
 import NavBar from '../components/NavBar.vue'
 import SideNavBar from '../components/SideNavBar.vue'
 import DataBalita from './DataBalita.vue'
+import HasilPenimbangan from './HasilPenimbangan.vue'
+import KlasifikasiBalita from './KlasifikasiBalita.vue'
 import { navItems, reportItems, allNav } from '../data/navigationData.js'
 import '../assets/PageHome.css'
 
@@ -298,23 +316,22 @@ const roleLabel = computed(() => ({
 const statCards = ref([
   { label: 'Total Balita',       value: '–', icon: iconBalita(),   color: '#2F9D94', trend: 0 },
   { label: 'Ibu Hamil Aktif',    value: '–', icon: iconBumil(),    color: '#025F67', trend: 0 },
-  { label: 'Lansia Terdaftar',   value: '–', icon: iconLansia(),   color: '#BCC5CC', trend: 0 },
   { label: 'Kegiatan Bulan Ini', value: '–', icon: iconKegiatan(), color: '#063154', trend: 0 },
 ])
 
 const monthlyData = ref([
-  { label:'Jan', balita:80,  bumil:15, lansia:60 },
-  { label:'Feb', balita:92,  bumil:18, lansia:55 },
-  { label:'Mar', balita:75,  bumil:12, lansia:70 },
-  { label:'Apr', balita:110, bumil:20, lansia:65 },
-  { label:'Mei', balita:98,  bumil:17, lansia:72 },
-  { label:'Jun', balita:88,  bumil:14, lansia:68 },
-  { label:'Jul', balita:120, bumil:22, lansia:80 },
-  { label:'Agu', balita:105, bumil:19, lansia:75 },
-  { label:'Sep', balita:95,  bumil:16, lansia:70 },
-  { label:'Okt', balita:112, bumil:21, lansia:82 },
-  { label:'Nov', balita:88,  bumil:13, lansia:65 },
-  { label:'Des', balita:100, bumil:18, lansia:74 },
+  { label:'Jan', balita:80,  bumil:15 },
+  { label:'Feb', balita:92,  bumil:18 },
+  { label:'Mar', balita:75,  bumil:12 },
+  { label:'Apr', balita:110, bumil:20 },
+  { label:'Mei', balita:98,  bumil:17 },
+  { label:'Jun', balita:88,  bumil:14 },
+  { label:'Jul', balita:120, bumil:22 },
+  { label:'Agu', balita:105, bumil:19 },
+  { label:'Sep', balita:95,  bumil:16 },
+  { label:'Okt', balita:112, bumil:21 },
+  { label:'Nov', balita:88,  bumil:13 },
+  { label:'Des', balita:100, bumil:18 },
 ])
 
 // On small screens, show only last 6 months to avoid overflow
@@ -326,7 +343,7 @@ const visibleMonthlyData = computed(() => {
 })
 
 const maxVal = computed(() =>
-  Math.max(...monthlyData.value.map(m => Math.max(m.balita, m.bumil, m.lansia)))
+  Math.max(...monthlyData.value.map(m => Math.max(m.balita, m.bumil)))
 )
 
 const giziData = [
@@ -380,7 +397,7 @@ async function fetchDashboardData() {
     // ── 2. Ringkasan per posyandu dari view ──────
     const { data: ringkasan, error: errRingkasan } = await supabase
       .from('v_ringkasan_posyandu')
-      .select('id, nama, ketua, total_bumil, total_lansia, kegiatan_terjadwal')
+      .select('id, nama, ketua, total_bumil, kegiatan_terjadwal')
       .order('nama')
 
     if (errRingkasan) throw errRingkasan
@@ -420,7 +437,6 @@ async function fetchDashboardData() {
         status: 'Aktif',
         balita: balitaCounts[posyanduName] ?? 0,
         bumil:  p.total_bumil   ?? 0,
-        lansia: p.total_lansia  ?? 0,
       }
     })
 
@@ -440,13 +456,11 @@ async function fetchDashboardData() {
 
     // ── 4. Total lintas posyandu untuk stat cards ─
     const totalBumil    = ringkasan.reduce((sum, p) => sum + (p.total_bumil   ?? 0), 0)
-    const totalLansia   = ringkasan.reduce((sum, p) => sum + (p.total_lansia  ?? 0), 0)
     const totalKegiatan = ringkasan.reduce((sum, p) => sum + (p.kegiatan_terjadwal ?? 0), 0)
 
     statCards.value = [
       { label: 'Total Balita',       value: String(totalBalitaCount ?? 0), icon: iconBalita(),   color: '#2F9D94', trend: 0 },
       { label: 'Ibu Hamil Aktif',    value: String(totalBumil),            icon: iconBumil(),    color: '#025F67', trend: 0 },
-      { label: 'Lansia Terdaftar',   value: String(totalLansia),           icon: iconLansia(),   color: '#BCC5CC', trend: 0 },
       { label: 'Kegiatan Terjadwal', value: String(totalKegiatan),         icon: iconKegiatan(), color: '#063154', trend: 0 },
     ]
 
@@ -472,7 +486,7 @@ function setActiveTab(posyanduId) {
 // ──────────────────────────────────────────────
 async function handleLogout() {
   await supabase.auth.signOut()
-  window.location.href = '/login'
+  window.location.href = '/'
 }
 
 // ──────────────────────────────────────────────
@@ -488,12 +502,6 @@ function iconBumil() {
   return `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
     <circle cx="11" cy="6" r="3.5" stroke="currentColor" stroke-width="1.5"/>
     <path d="M6 12c0 4 2.5 8 5 8s5-4 5-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-  </svg>`
-}
-function iconLansia() {
-  return `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-    <circle cx="11" cy="6" r="3.5" stroke="currentColor" stroke-width="1.5"/>
-    <path d="M5 21v-4a6 6 0 0112 0v4M11 13v5M9 16h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
   </svg>`
 }
 function iconKegiatan() {

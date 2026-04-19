@@ -17,37 +17,19 @@ export const navItems = [
     </svg>`
   },
   {
-    id: 'bumil', label: 'Ibu Hamil',
+    id: 'penimbangan', label: 'Hasil Penimbangan',
+    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M3 15h12M9 1v13M3 8h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="9" cy="3" r="1.5" stroke="currentColor" stroke-width="1.4"/>
+      <circle cx="6" cy="10" r="1.5" stroke="currentColor" stroke-width="1.4"/>
+      <circle cx="12" cy="10" r="1.5" stroke="currentColor" stroke-width="1.4"/>
+    </svg>`
+  },
+  {
+    id: 'klasifikasi', label: 'Klasifikasi Balita',
     icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
       <circle cx="9" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/>
-      <path d="M5 10c0 3 1.5 6 4 6s4-3 4-6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-    </svg>`
-  },
-  {
-    id: 'lansia', label: 'Lansia',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <circle cx="9" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/>
-      <path d="M4 17v-3a5 5 0 0110 0v3M9 11v4M7 13h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-    </svg>`
-  },
-  {
-    id: 'imunisasi', label: 'Imunisasi',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path d="M11 3l4 4-8 8-4-4 8-8zM9 5l4 4M2 16l2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`
-  },
-  {
-    id: 'kegiatan', label: 'Kegiatan',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <rect x="2" y="3" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.4"/>
-      <path d="M2 7h14M6 1v4M12 1v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-    </svg>`
-  },
-  {
-    id: 'stok', label: 'Stok & Obat',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <rect x="4" y="2" width="10" height="14" rx="2" stroke="currentColor" stroke-width="1.4"/>
-      <path d="M7 6h4M7 9h4M7 12h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M2 16c0-3.866 3.134-7 7-7s7 3.134 7 7M9 5v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
     </svg>`
   },
 ]

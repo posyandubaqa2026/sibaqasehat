@@ -1,5 +1,5 @@
 <template>
-  <div class="data-balita-wrap">
+  <div class="hasil-penimbangan-wrap">
 
     <!-- ═══════════════════════════════════════════════
          DASHBOARD TAB — ringkasan semua posyandu
@@ -18,7 +18,6 @@
     <transition name="fade" mode="out-in">
       <div v-if="activePosyanduId !== null && !isUnlocked" class="password-gate" key="gate">
         <div class="gate-card">
-          <!-- Icon kunci -->
           <div class="gate-icon-wrap">
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
               <rect width="36" height="36" rx="12" fill="#EAF7F6"/>
@@ -35,7 +34,6 @@
             <strong>{{ activePosyanduNama }}</strong>
           </p>
 
-          <!-- Form password -->
           <div class="gate-form">
             <div class="input-wrap" :class="{ error: pwError }">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="input-icon">
@@ -72,7 +70,6 @@
             </button>
           </div>
 
-          <!-- Hint attempts -->
           <p class="gate-hint">
             Hubungi administrator jika lupa password
           </p>
@@ -81,116 +78,75 @@
     </transition>
 
     <!-- ═══════════════════════════════════════════════
-         HALAMAN DATA BALITA (setelah unlock)
+         HALAMAN HASIL PENIMBANGAN (setelah unlock)
          ═══════════════════════════════════════════════ -->
     <transition name="fade" mode="out-in">
-      <div v-if="activePosyanduId !== null && isUnlocked" class="balita-page" key="page">
+      <div v-if="activePosyanduId !== null && isUnlocked" class="penimbangan-page" key="page">
 
         <!-- ── Toolbar ── -->
-        <div class="balita-toolbar">
+        <div class="penimbangan-toolbar">
           <div class="toolbar-left">
             <div class="toolbar-info">
               <span class="toolbar-posyandu">{{ activePosyanduNama }}</span>
-              <span class="toolbar-count">{{ filteredBalita.length }} balita terdaftar</span>
+              <span class="toolbar-count">{{ filteredHasilPenimbangan.length }} data terdaftar</span>
             </div>
           </div>
           <div class="toolbar-right">
             <div class="search-wrap">
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
                 <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.3"/>
-                <path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                <path d="M10 10l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
               </svg>
-              <input v-model="searchQuery" placeholder="Cari nama balita / ibu..." class="search-input"/>
+              <input v-model="searchQuery" placeholder="Cari nama balita" class="search-input"/>
             </div>
-            <select v-model="filterGender" class="filter-select">
-              <option value="">Semua Jenis Kelamin</option>
-              <option value="Laki-laki">Laki-laki</option>
-              <option value="Perempuan">Perempuan</option>
-            </select>
             <button class="btn-add" @click="openModal('add')">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
               </svg>
-              Tambah Balita
-            </button>
-            <button class="btn-lock" @click="lockPage" title="Kunci halaman">
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                <path d="M4.5 6.5V4a3 3 0 016 0v2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-                <rect x="2" y="6.5" width="11" height="8" rx="2" stroke="currentColor" stroke-width="1.3"/>
-                <circle cx="7.5" cy="10.5" r="1" fill="currentColor"/>
-              </svg>
+              Tambah Data
             </button>
           </div>
         </div>
 
-        <!-- ── Loading ── -->
-        <div class="table-loading" v-if="tableLoading">
-          <div class="spinner-lg"></div>
-          <span>Memuat data balita...</span>
-        </div>
-
         <!-- ── Error ── -->
-        <div class="table-error" v-else-if="tableError">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="10" r="9" stroke="#E55353" stroke-width="1.5"/>
-            <path d="M10 6v4M10 14h.01" stroke="#E55353" stroke-width="1.5" stroke-linecap="round"/>
+        <div v-if="tableError" class="table-error">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="7" stroke="#E55353" stroke-width="1.3"/>
+            <path d="M8 4v4M8 12h.01" stroke="#E55353" stroke-width="1.3" stroke-linecap="round"/>
           </svg>
-          {{ tableError }}
-          <button @click="fetchBalita">Coba Lagi</button>
-        </div>
-
-        <!-- ── Empty ── -->
-        <div class="table-empty" v-else-if="filteredBalita.length === 0 && !tableLoading">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-            <circle cx="20" cy="20" r="18" stroke="#BCC5CC" stroke-width="1.5"/>
-            <path d="M13 20h14M20 13v14" stroke="#BCC5CC" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-          <p>{{ searchQuery || filterGender ? 'Tidak ada data yang cocok dengan filter' : 'Belum ada data balita. Klik "Tambah Balita" untuk mulai.' }}</p>
+          <span>{{ tableError }}</span>
         </div>
 
         <!-- ── Table ── -->
-        <div class="table-wrap" v-else>
-          <table class="balita-table">
+        <div class="table-wrapper" v-if="!tableLoading">
+          <table class="data-table">
             <thead>
               <tr>
                 <th class="col-no">No</th>
                 <th class="col-nama">Nama Balita</th>
-                <th class="col-ibu hide-sm">Nama Ibu</th>
-                <th class="col-lahir hide-sm">Tanggal Lahir</th>
-                <th class="col-usia">Usia</th>
-                <th class="col-jk hide-xs">Jenis Kelamin</th>
+                <th class="col-tgl hide-sm">Tanggal Timbang</th>
+                <th class="col-bb hide-xs">Berat Badan (kg)</th>
+                <th class="col-tb hide-md">Tinggi Badan (cm)</th>
+                <th class="col-input hide-sm">Diinput Oleh</th>
                 <th class="col-aksi">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(b, i) in filteredBalita" :key="b.id" class="table-row">
+              <tr v-for="(h, i) in filteredHasilPenimbangan" :key="h.id" class="table-row">
                 <td class="col-no">{{ i + 1 }}</td>
-                <td class="col-nama">
-                  <div class="nama-wrap">
-                    <div class="nama-avatar" :class="b.jenis_kelamin === 'Laki-laki' ? 'laki' : 'perempuan'">
-                      {{ b.nama_lengkap[0] }}
-                    </div>
-                    <div>
-                      <span class="nama-text">{{ b.nama_lengkap }}</span>
-                    </div>
-                  </div>
-                </td>
-                <td class="col-ibu hide-sm">{{ b.nama_ibu }}</td>
-                <td class="col-lahir hide-sm">{{ formatDate(b.tanggal_lahir) }}</td>
-                <td class="col-usia">{{ calcAge(b.tanggal_lahir) }}</td>
-                <td class="col-jk hide-xs">
-                  <span class="jk-badge" :class="b.jenis_kelamin === 'Laki-laki' ? 'laki' : 'perempuan'">
-                    {{ b.jenis_kelamin === 'Laki-laki' ? 'L' : 'P' }}
-                  </span>
-                </td>
+                <td class="col-nama">{{ h.nama_balita || '–' }}</td>
+                <td class="col-tgl hide-sm">{{ formatDate(h.tanggal_timbang) }}</td>
+                <td class="col-bb hide-xs">{{ h.berat_badan ?? '–' }}</td>
+                <td class="col-tb hide-md">{{ h.tinggi_badan ?? '–' }}</td>
+                <td class="col-input hide-sm">{{ h.created_by ?? '–' }}</td>
                 <td class="col-aksi">
                   <div class="aksi-btns">
-                    <button class="btn-icon edit" @click="openModal('edit', b)" title="Edit">
+                    <button class="btn-icon edit" @click="openModal('edit', h)" title="Edit">
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                         <path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                     </button>
-                    <button class="btn-icon delete" @click="confirmDelete(b)" title="Hapus">
+                    <button class="btn-icon delete" @click="confirmDelete(h)" title="Hapus">
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                         <path d="M2 4h10M5 4V2h4v2M3 4l1 8h6l1-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
@@ -198,21 +154,30 @@
                   </div>
                 </td>
               </tr>
+              <tr v-if="filteredHasilPenimbangan.length === 0" class="empty-row">
+                <td colspan="7" class="empty-cell">Tidak ada data hasil penimbangan</td>
+              </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- ── Loading ── -->
+        <div v-else class="table-loading">
+          <div class="spinner-large"></div>
+          <p>Memuat data...</p>
         </div>
       </div>
     </transition>
 
     <!-- ═══════════════════════════════════════════════
-         MODAL TAMBAH / EDIT
+         MODAL TAMBAH / EDIT HASIL PENIMBANGAN
          ═══════════════════════════════════════════════ -->
     <teleport to="body">
       <transition name="modal-fade">
         <div class="modal-overlay" v-if="showModal" @click.self="closeModal">
           <div class="modal-box">
             <div class="modal-header">
-              <h3>{{ modalMode === 'add' ? 'Tambah Data Balita' : 'Edit Data Balita' }}</h3>
+              <h3>{{ modalMode === 'add' ? 'Tambah Hasil Penimbangan' : 'Edit Hasil Penimbangan' }}</h3>
               <button class="modal-close" @click="closeModal">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -222,61 +187,51 @@
 
             <div class="modal-body">
               <div class="form-grid">
-                <!-- Nama Balita -->
+                <!-- Pilih Balita -->
                 <div class="form-group full">
                   <label>Nama Balita <span class="req">*</span></label>
-                  <input v-model="form.nama_lengkap" placeholder="Masukkan nama lengkap balita" class="form-input" :class="{ 'is-invalid': formErrors.nama_lengkap }"/>
-                  <span class="field-error" v-if="formErrors.nama_lengkap">{{ formErrors.nama_lengkap }}</span>
-                </div>
-
-                <!-- Tanggal Lahir -->
-                <div class="form-group">
-                  <label>Tanggal Lahir <span class="req">*</span></label>
-                  <input type="date" v-model="form.tanggal_lahir" class="form-input" :class="{ 'is-invalid': formErrors.tanggal_lahir }"/>
-                  <span class="field-error" v-if="formErrors.tanggal_lahir">{{ formErrors.tanggal_lahir }}</span>
-                </div>
-
-                <!-- Jenis Kelamin -->
-                <div class="form-group">
-                  <label>Jenis Kelamin <span class="req">*</span></label>
-                  <select v-model="form.jenis_kelamin" class="form-input" :class="{ 'is-invalid': formErrors.jenis_kelamin }">
-                    <option value="">Pilih...</option>
-                    <option value="Laki-laki">Laki-laki</option>
-                    <option value="Perempuan">Perempuan</option>
+                  <select v-model="form.id_bayi" class="form-input" :class="{ 'is-invalid': formErrors.id_bayi }" :disabled="modalMode === 'edit'">
+                    <option value="">Pilih balita...</option>
+                    <option v-for="b in daftarBalita" :key="b.id" :value="b.id">
+                      {{ b.nama_lengkap }}
+                    </option>
                   </select>
-                  <span class="field-error" v-if="formErrors.jenis_kelamin">{{ formErrors.jenis_kelamin }}</span>
+                  <span class="field-error" v-if="formErrors.id_bayi">{{ formErrors.id_bayi }}</span>
                 </div>
 
-                <!-- Divider Ibu -->
-                <div class="form-divider full">
-                  <span>Data Orang Tua</span>
-                </div>
-
-                <!-- Nama Ibu -->
+                <!-- Tanggal Timbang -->
                 <div class="form-group full">
-                  <label>Nama Ibu <span class="req">*</span></label>
-                  <input v-model="form.nama_ibu" placeholder="Nama ibu kandung" class="form-input" :class="{ 'is-invalid': formErrors.nama_ibu }"/>
-                  <span class="field-error" v-if="formErrors.nama_ibu">{{ formErrors.nama_ibu }}</span>
+                  <label>Tanggal Timbang <span class="req">*</span></label>
+                  <input type="date" v-model="form.tanggal_timbang" class="form-input" :class="{ 'is-invalid': formErrors.tanggal_timbang }"/>
+                  <span class="field-error" v-if="formErrors.tanggal_timbang">{{ formErrors.tanggal_timbang }}</span>
                 </div>
 
-                <!-- Divider Input -->
-                <div class="form-divider full">
-                  <span>Data Input</span>
+                <!-- Berat Badan -->
+                <div class="form-group">
+                  <label>Berat Badan (kg) <span class="req">*</span></label>
+                  <input type="number" step="0.1" v-model="form.berat_badan" placeholder="0.0" class="form-input" :class="{ 'is-invalid': formErrors.berat_badan }"/>
+                  <span class="field-error" v-if="formErrors.berat_badan">{{ formErrors.berat_badan }}</span>
                 </div>
 
-                <!-- Pembuat/Kader -->
+                <!-- Tinggi Badan -->
+                <div class="form-group">
+                  <label>Tinggi Badan (cm) <span class="req">*</span></label>
+                  <input type="number" step="0.1" v-model="form.tinggi_badan" placeholder="0.0" class="form-input" :class="{ 'is-invalid': formErrors.tinggi_badan }"/>
+                  <span class="field-error" v-if="formErrors.tinggi_badan">{{ formErrors.tinggi_badan }}</span>
+                </div>
+
+                <!-- Input By -->
                 <div class="form-group full">
-                  <label>Pembuat/Kader <span class="req">*</span></label>
+                  <label>Diinput Oleh <span class="req">*</span></label>
                   <input v-model="form.created_by" placeholder="Nama kader/pembuat" class="form-input" :class="{ 'is-invalid': formErrors.created_by }"/>
                   <span class="field-error" v-if="formErrors.created_by">{{ formErrors.created_by }}</span>
                 </div>
-
               </div>
             </div>
 
             <div class="modal-footer">
               <button class="btn-cancel" @click="closeModal" :disabled="formLoading">Batal</button>
-              <button class="btn-save" @click="saveBalita" :disabled="formLoading">
+              <button class="btn-save" @click="savePenimbangan" :disabled="formLoading">
                 <span v-if="formLoading" class="spinner"></span>
                 <span v-else>{{ modalMode === 'add' ? 'Simpan Data' : 'Perbarui Data' }}</span>
               </button>
@@ -287,33 +242,25 @@
     </teleport>
 
     <!-- ═══════════════════════════════════════════════
-         MODAL KONFIRMASI HAPUS
+         MODAL KONFIRMASI DELETE
          ═══════════════════════════════════════════════ -->
     <teleport to="body">
       <transition name="modal-fade">
-        <div class="modal-overlay" v-if="showDeleteModal" @click.self="showDeleteModal = false">
-          <div class="modal-box modal-sm">
-            <div class="modal-header danger">
-              <h3>Hapus Data Balita</h3>
-              <button class="modal-close" @click="showDeleteModal = false">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </button>
-            </div>
-            <div class="modal-body delete-body">
+        <div class="modal-overlay" v-if="showDeleteModal" @click.self="closeDeleteModal">
+          <div class="modal-box modal-confirm">
+            <div class="confirm-icon">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <circle cx="24" cy="24" r="22" fill="#FEF0F0"/>
-                <path d="M24 14v12M24 32h.01" stroke="#E55353" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="24" cy="24" r="22" stroke="#E55353" stroke-width="2"/>
+                <path d="M24 14v10M24 32h.02" stroke="#E55353" stroke-width="2" stroke-linecap="round"/>
               </svg>
-              <p>Apakah kamu yakin ingin menghapus data <strong>{{ deleteTarget?.nama_lengkap }}</strong>?</p>
-              <p class="delete-warn">Tindakan ini tidak dapat dibatalkan.</p>
             </div>
-            <div class="modal-footer">
-              <button class="btn-cancel" @click="showDeleteModal = false" :disabled="formLoading">Batal</button>
-              <button class="btn-delete" @click="deleteBalita" :disabled="formLoading">
+            <h3>Hapus Data?</h3>
+            <p>Apakah Anda yakin ingin menghapus data hasil penimbangan ini?</p>
+            <div class="confirm-btns">
+              <button class="btn-cancel" @click="closeDeleteModal" :disabled="formLoading">Batal</button>
+              <button class="btn-danger" @click="deletePenimbangan" :disabled="formLoading">
                 <span v-if="formLoading" class="spinner"></span>
-                <span v-else>Ya, Hapus</span>
+                <span v-else>Hapus</span>
               </button>
             </div>
           </div>
@@ -321,30 +268,21 @@
       </transition>
     </teleport>
 
-    <!-- Toast Notifikasi -->
-    <teleport to="body">
-      <transition name="toast">
-        <div class="toast" :class="toast.type" v-if="toast.show">
-          <svg v-if="toast.type === 'success'" width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="7" fill="#16A87A"/>
-            <path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <svg v-else width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="7" fill="#E55353"/>
-            <path d="M8 5v3M8 11h.01" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
-          </svg>
-          {{ toast.msg }}
-        </div>
-      </transition>
-    </teleport>
-
+    <!-- ═══════════════════════════════════════════════
+         TOAST NOTIFICATION
+         ═══════════════════════════════════════════════ -->
+    <transition name="toast-slide">
+      <div v-if="toast.show" :class="['toast', toast.type]">
+        {{ toast.msg }}
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
 import { createClient } from '@supabase/supabase-js'
-import '../assets/DataBalita.css'
+import '../assets/HasilPenimbangan.css'
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -353,42 +291,32 @@ const supabase = createClient(
 
 // ── Props ──────────────────────────────────────
 const props = defineProps({
-  activePosyanduId:   { type: [String, null], default: null },
+  activePosyanduId: { type: [String, null], default: null },
   activePosyanduNama: { type: String, default: '' },
-  // Map dari posyandu id → key vault (contoh: 'singkil', 'lobak', dll)
-  posyanduKeyMap: {
-    type: Object,
-    default: () => ({})
-  },
-  // Map dari posyandu id → nama tabel (contoh: 'balita_singkil', 'balita_lobak', dll)
-  posyanduTableMap: {
-    type: Object,
-    default: () => ({})
-  }
+  posyanduKeyMap: { type: Object, default: () => ({}) },
+  posyanduTableMap: { type: Object, default: () => ({}) }
 })
 
 // ─────────────────────────────────────────────────────
 // PASSWORD GATE STATE
-// Menyimpan unlock state per posyandu di session memory
-// -─────────────────────────────────────────────────────
-const unlockedMap = ref({})   // { [posyanduId]: true }
-const pwInput     = ref('')
-const showPw      = ref(false)
-const pwError     = ref('')
-const pwLoading   = ref(false)
-const pwInputRef  = ref(null)
+// ─────────────────────────────────────────────────────
+const unlockedMap = ref({})
+const pwInput = ref('')
+const showPw = ref(false)
+const pwError = ref('')
+const pwLoading = ref(false)
+const pwInputRef = ref(null)
 
 const isUnlocked = computed(() => !!unlockedMap.value[props.activePosyanduId])
 
-// Reset password input setiap ganti posyandu
 watch(() => props.activePosyanduId, () => {
   pwInput.value = ''
   pwError.value = ''
-  showPw.value  = false
+  showPw.value = false
   if (!isUnlocked.value) {
     nextTick(() => pwInputRef.value?.focus())
   } else {
-    fetchBalita()
+    fetchData()
   }
 })
 
@@ -398,88 +326,92 @@ async function submitPassword() {
     return
   }
   pwLoading.value = true
-  pwError.value   = ''
+  pwError.value = ''
   try {
     const posyanduKey = props.posyanduKeyMap[props.activePosyanduId]
     if (!posyanduKey) throw new Error('Posyandu tidak dikenali')
 
-    // Panggil RPC function di Supabase (SECURITY DEFINER — password aman)
     const { data, error } = await supabase.rpc('verify_posyandu_password', {
       p_posyandu_key: posyanduKey,
-      p_password:     pwInput.value,
+      p_password: pwInput.value,
     })
 
-    if (error) {
-      console.error('[submitPassword] RPC Error:', error)
-      throw new Error(`Gagal verifikasi: ${error.message}`)
-    }
-
-    console.log('[submitPassword] RPC Result:', data)
+    if (error) throw new Error(`Gagal verifikasi: ${error.message}`)
 
     if (data === true) {
       unlockedMap.value[props.activePosyanduId] = true
       pwInput.value = ''
-      fetchBalita()
+      fetchData()
     } else {
       pwError.value = 'Password salah. Silakan coba lagi.'
       pwInput.value = ''
       nextTick(() => pwInputRef.value?.focus())
     }
   } catch (err) {
-    console.error('[submitPassword] Error:', err.message)
     pwError.value = err.message || 'Gagal memverifikasi password. Coba lagi.'
   } finally {
     pwLoading.value = false
   }
 }
 
-function lockPage() {
-  if (props.activePosyanduId) {
-    delete unlockedMap.value[props.activePosyanduId]
-    unlockedMap.value = { ...unlockedMap.value }
-    balitaList.value = []
-  }
-}
-
 // ─────────────────────────────────────────────────────
 // DATA STATE
 // ─────────────────────────────────────────────────────
-const balitaList   = ref([])
+const hasilPenimbanganList = ref([])
+const daftarBalita = ref([])
 const tableLoading = ref(false)
-const tableError   = ref(null)
-const searchQuery  = ref('')
-const filterGender = ref('')
+const tableError = ref(null)
+const searchQuery = ref('')
 
-const filteredBalita = computed(() => {
-  let list = balitaList.value
+const filteredHasilPenimbangan = computed(() => {
+  let list = hasilPenimbanganList.value
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
-    list = list.filter(b =>
-      b.nama_lengkap?.toLowerCase().includes(q) ||
-      b.nama_ibu?.toLowerCase().includes(q)
+    list = list.filter(p =>
+      p.nama_balita?.toLowerCase().includes(q)
     )
-  }
-  if (filterGender.value) {
-    list = list.filter(b => b.jenis_kelamin === filterGender.value)
   }
   return list
 })
 
-async function fetchBalita() {
+async function fetchData() {
   if (!props.activePosyanduId) return
   const tableBalita = props.posyanduTableMap[props.activePosyanduId]
-  if (!tableBalita) return
+  const posyanduKey = props.posyanduKeyMap[props.activePosyanduId]
+  const tablePenimbangan = `hasil_penimbangan_${posyanduKey}`
+
+  if (!tableBalita || !tablePenimbangan) return
 
   tableLoading.value = true
-  tableError.value   = null
+  tableError.value = null
   try {
-    const { data, error } = await supabase
+    // 1. Fetch daftar balita
+    const { data: balitaData, error: balitaError } = await supabase
       .from(tableBalita)
-      .select('*')
+      .select('id, nama_lengkap')
       .order('nama_lengkap')
 
-    if (error) throw error
-    balitaList.value = data ?? []
+    if (balitaError) throw balitaError
+    daftarBalita.value = balitaData ?? []
+
+    // 2. Fetch hasil penimbangan
+    const { data: penimbanganData, error: penimbanganError } = await supabase
+      .from(tablePenimbangan)
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (penimbanganError) throw penimbanganError
+
+    // 3. Join dengan nama balita
+    const merged = (penimbanganData ?? []).map(p => {
+      const balita = daftarBalita.value.find(b => b.id === p.id_bayi)
+      return {
+        ...p,
+        nama_balita: balita?.nama_lengkap || '–'
+      }
+    })
+
+    hasilPenimbanganList.value = merged
   } catch (err) {
     tableError.value = 'Gagal memuat data: ' + (err.message ?? err)
   } finally {
@@ -490,32 +422,32 @@ async function fetchBalita() {
 // ─────────────────────────────────────────────────────
 // MODAL / FORM
 // ─────────────────────────────────────────────────────
-const showModal  = ref(false)
-const modalMode  = ref('add')   // 'add' | 'edit'
+const showModal = ref(false)
+const modalMode = ref('add')
 const formLoading = ref(false)
-const formErrors  = ref({})
-const editingId   = ref(null)
+const formErrors = ref({})
+const editingId = ref(null)
 
 const emptyForm = () => ({
-  nama_lengkap: '',
-  tanggal_lahir: '',
-  jenis_kelamin: '',
-  nama_ibu: '',
+  id_bayi: '',
+  tanggal_timbang: '',
+  berat_badan: null,
+  tinggi_badan: null,
   created_by: '',
 })
 const form = ref(emptyForm())
 
 function openModal(mode, data = null) {
-  modalMode.value  = mode
+  modalMode.value = mode
   formErrors.value = {}
   if (mode === 'edit' && data) {
     editingId.value = data.id
     form.value = {
-      nama_lengkap:   data.nama_lengkap   ?? '',
-      tanggal_lahir:  data.tanggal_lahir  ?? '',
-      jenis_kelamin:  data.jenis_kelamin  ?? '',
-      nama_ibu:       data.nama_ibu       ?? '',
-      created_by:     data.created_by     ?? '',
+      id_bayi: data.id_bayi ?? '',
+      tanggal_timbang: data.tanggal_timbang ?? '',
+      berat_badan: data.berat_badan ?? null,
+      tinggi_badan: data.tinggi_badan ?? null,
+      created_by: data.created_by ?? '',
     }
   } else {
     editingId.value = null
@@ -525,50 +457,52 @@ function openModal(mode, data = null) {
 }
 
 function closeModal() {
-  showModal.value  = false
+  showModal.value = false
   formErrors.value = {}
 }
 
 function validateForm() {
   const errors = {}
-  if (!form.value.nama_lengkap?.trim())  errors.nama_lengkap   = 'Nama balita wajib diisi'
-  if (!form.value.tanggal_lahir)        errors.tanggal_lahir = 'Tanggal lahir wajib diisi'
-  if (!form.value.jenis_kelamin)        errors.jenis_kelamin = 'Jenis kelamin wajib dipilih'
-  if (!form.value.nama_ibu?.trim())     errors.nama_ibu      = 'Nama ibu wajib diisi'
-  if (!form.value.created_by?.trim())   errors.created_by    = 'Pembuat/kader wajib diisi'
+  if (!form.value.id_bayi) errors.id_bayi = 'Pilih balita terlebih dahulu'
+  if (!form.value.tanggal_timbang) errors.tanggal_timbang = 'Tanggal timbang wajib diisi'
+  if (!form.value.berat_badan) errors.berat_badan = 'Berat badan wajib diisi'
+  if (!form.value.tinggi_badan) errors.tinggi_badan = 'Tinggi badan wajib diisi'
+  if (!form.value.created_by?.trim()) errors.created_by = 'Nama kader wajib diisi'
   formErrors.value = errors
   return Object.keys(errors).length === 0
 }
 
-async function saveBalita() {
+async function savePenimbangan() {
   if (!validateForm()) return
-  const tableBalita = props.posyanduTableMap[props.activePosyanduId]
-  if (!tableBalita) return
+  const posyanduKey = props.posyanduKeyMap[props.activePosyanduId]
+  const tablePenimbangan = `hasil_penimbangan_${posyanduKey}`
 
   formLoading.value = true
   try {
     const payload = {
-      nama_lengkap: form.value.nama_lengkap,
-      jenis_kelamin: form.value.jenis_kelamin,
-      tanggal_lahir: form.value.tanggal_lahir,
-      nama_ibu: form.value.nama_ibu,
+      id_bayi: form.value.id_bayi,
+      tanggal_timbang: form.value.tanggal_timbang,
+      berat_badan: parseFloat(form.value.berat_badan),
+      tinggi_badan: parseFloat(form.value.tinggi_badan),
       created_by: form.value.created_by,
     }
 
     if (modalMode.value === 'add') {
-      const { error } = await supabase.from(tableBalita).insert([payload])
+      const { error } = await supabase.from(tablePenimbangan).insert([payload])
       if (error) throw error
-      showToast('Data balita berhasil ditambahkan', 'success')
+      showToast('Data hasil penimbangan berhasil ditambahkan', 'success')
     } else {
-      const { error } = await supabase.from(tableBalita).update(payload).eq('id', editingId.value)
+      const { error } = await supabase
+        .from(tablePenimbangan)
+        .update(payload)
+        .eq('id', editingId.value)
       if (error) throw error
-      showToast('Data balita berhasil diperbarui', 'success')
+      showToast('Data hasil penimbangan berhasil diperbarui', 'success')
     }
 
     closeModal()
-    await fetchBalita()
+    await fetchData()
   } catch (err) {
-    console.error(err)
     showToast('Gagal menyimpan: ' + (err.message ?? err), 'error')
   } finally {
     formLoading.value = false
@@ -579,27 +513,33 @@ async function saveBalita() {
 // DELETE
 // ─────────────────────────────────────────────────────
 const showDeleteModal = ref(false)
-const deleteTarget    = ref(null)
+const deleteTarget = ref(null)
 
-function confirmDelete(b) {
-  deleteTarget.value    = b
+function confirmDelete(h) {
+  deleteTarget.value = h
   showDeleteModal.value = true
 }
 
-async function deleteBalita() {
-  const tableBalita = props.posyanduTableMap[props.activePosyanduId]
-  if (!tableBalita || !deleteTarget.value) return
+function closeDeleteModal() {
+  showDeleteModal.value = false
+  deleteTarget.value = null
+}
+
+async function deletePenimbangan() {
+  const posyanduKey = props.posyanduKeyMap[props.activePosyanduId]
+  const tablePenimbangan = `hasil_penimbangan_${posyanduKey}`
+
+  if (!deleteTarget.value) return
   formLoading.value = true
   try {
-    // Delete dari balita_[posyandu] — CASCADE otomatis delete hasil_penimbangan
     const { error } = await supabase
-      .from(tableBalita)
+      .from(tablePenimbangan)
       .delete()
       .eq('id', deleteTarget.value.id)
     if (error) throw error
     showToast('Data berhasil dihapus', 'success')
-    showDeleteModal.value = false
-    await fetchBalita()
+    closeDeleteModal()
+    await fetchData()
   } catch (err) {
     showToast('Gagal menghapus: ' + (err.message ?? err), 'error')
   } finally {
@@ -612,6 +552,7 @@ async function deleteBalita() {
 // ─────────────────────────────────────────────────────
 const toast = ref({ show: false, msg: '', type: 'success' })
 let toastTimer = null
+
 function showToast(msg, type = 'success') {
   clearTimeout(toastTimer)
   toast.value = { show: true, msg, type }
@@ -625,13 +566,6 @@ function formatDate(d) {
   if (!d) return '–'
   return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
 }
-
-function calcAge(dob) {
-  if (!dob) return '–'
-  const today  = new Date()
-  const birth  = new Date(dob)
-  const months = (today.getFullYear() - birth.getFullYear()) * 12 + (today.getMonth() - birth.getMonth())
-  if (months < 24) return `${months} bln`
-  return `${Math.floor(months / 12)} thn`
-}
 </script>
+
+

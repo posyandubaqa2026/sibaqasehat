@@ -265,7 +265,6 @@
 .bar:hover { opacity: 0.8; }
 .bar.balita { background: var(--scooter); }
 .bar.bumil  { background: var(--bluelagoon); }
-.bar.lansia { background: var(--heather); }
 .bar-label {
   font-size: 9px;
   color: var(--text-muted);
@@ -495,7 +494,6 @@
 }
 .sch-badge.timbang { background: #E6F7F6; color: #2F9D94; }
 .sch-badge.imun    { background: #EEF0FF; color: #5C6BC0; }
-.sch-badge.lansia  { background: #F0F4F8; color: #025F67; }
 .sch-badge.bumil   { background: #FFF8E6; color: #F59E0B; }
 
 /* ──────────────────────────────────────────────
