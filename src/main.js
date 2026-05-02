@@ -11,6 +11,8 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
+app.config.devtools = false
+
 // Inisialisasi session sebelum mount
 const authStore = useAuthStore()
 

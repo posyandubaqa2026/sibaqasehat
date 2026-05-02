@@ -191,6 +191,16 @@
         />
       </div>
 
+      <!-- LAPORAN BULANAN PAGE -->
+      <div class="content-area" v-else-if="activeNav === 'laporan_bulanan'">
+        <LaporanBulanan
+          :activePosyanduId="activeTab"
+          :activePosyanduNama="posyanduList.find(p => p.id === activeTab)?.nama ?? ''"
+          :posyanduKeyMap="posyanduKeyMap"
+          :posyanduTableMap="posyanduTableMap"
+        />
+      </div>
+
       <!-- PLACEHOLDER PAGES (untuk halaman lain yang belum jadi) -->
       <div class="content-area placeholder-page" v-else>
         <div class="no-posyandu-selected"
@@ -233,6 +243,7 @@ import SideNavBar from '../components/SideNavBar.vue'
 import DataBalita from './DataBalita.vue'
 import HasilPenimbangan from './HasilPenimbangan.vue'
 import KlasifikasiBalita from './KlasifikasiBalita.vue'
+import LaporanBulanan from './LaporanBulanan.vue'
 import { navItems, reportItems, allNav } from '../data/navigationData.js'
 import '../assets/PageHome.css'
 
@@ -313,11 +324,27 @@ const roleLabel = computed(() => ({
 }[currentUser.value.role] ?? 'Pengguna'))
 
 // Diisi dari Supabase — nilai awal '–' sebagai loading state
-const statCards = ref([
+const statCardsRaw = ref([
   { label: 'Total Balita',       value: '–', icon: iconBalita(),   color: '#2F9D94', trend: 0 },
   { label: 'Ibu Hamil Aktif',    value: '–', icon: iconBumil(),    color: '#025F67', trend: 0 },
   { label: 'Kegiatan Bulan Ini', value: '–', icon: iconKegiatan(), color: '#063154', trend: 0 },
 ])
+
+// Computed untuk menampilkan statCards berdasarkan posyandu aktif
+const statCards = computed(() => {
+  if (!activeTab.value || posyanduStats.value.length === 0) {
+    return statCardsRaw.value
+  }
+
+  const activePosyandu = posyanduStats.value.find(p => p.id === activeTab.value)
+  if (!activePosyandu) return statCardsRaw.value
+
+  return [
+    { ...statCardsRaw.value[0], value: String(activePosyandu.balita) },
+    { ...statCardsRaw.value[1], value: String(activePosyandu.bumil) },
+    statCardsRaw.value[2], // Kegiatan tetap dari ringkasan
+  ]
+})
 
 const monthlyData = ref([
   { label:'Jan', balita:80,  bumil:15 },
@@ -388,6 +415,7 @@ async function fetchDashboardData() {
 
   try {
     // ── 1. Total Balita dari v_semua_balita ──────
+    // eslint-disable-next-line no-unused-vars
     const { count: totalBalitaCount, error: errBalita } = await supabase
       .from('v_semua_balita')
       .select('*', { count: 'exact', head: true })
@@ -454,15 +482,6 @@ async function fetchDashboardData() {
     posyanduKeyMap.value   = newKeyMap
     posyanduTableMap.value = newTableMap
 
-    // ── 4. Total lintas posyandu untuk stat cards ─
-    const totalBumil    = ringkasan.reduce((sum, p) => sum + (p.total_bumil   ?? 0), 0)
-    const totalKegiatan = ringkasan.reduce((sum, p) => sum + (p.kegiatan_terjadwal ?? 0), 0)
-
-    statCards.value = [
-      { label: 'Total Balita',       value: String(totalBalitaCount ?? 0), icon: iconBalita(),   color: '#2F9D94', trend: 0 },
-      { label: 'Ibu Hamil Aktif',    value: String(totalBumil),            icon: iconBumil(),    color: '#025F67', trend: 0 },
-      { label: 'Kegiatan Terjadwal', value: String(totalKegiatan),         icon: iconKegiatan(), color: '#063154', trend: 0 },
-    ]
 
   } catch (err) {
     console.error('[fetchDashboardData]', err)

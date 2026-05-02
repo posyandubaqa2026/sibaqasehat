@@ -214,7 +214,7 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
 import { createClient } from '@supabase/supabase-js'
-import '../assets/DataBalita.css'
+import '../assets/KlasifikasiBalita.css'
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -337,12 +337,44 @@ async function fetchBalita() {
   tableLoading.value = true
   tableError.value   = null
   try {
+    // Fetch balita data
     const { data, error } = await supabase
       .from(tableName)
       .select('*')
       .order('nama_lengkap')
     if (error) throw error
-    balitaList.value = data ?? []
+
+    // Fetch hasil penimbangan untuk mendapatkan tinggi dan berat badan
+    const posyanduKey = props.posyanduKeyMap[props.activePosyanduId]
+    const hasilTableName = `hasil_penimbangan_${posyanduKey}`
+    const { data: hasilData, error: hasilError } = await supabase
+      .from(hasilTableName)
+      .select('id_bayi, tinggi_badan, berat_badan, created_at')
+      .order('created_at', { ascending: false })
+
+    if (hasilError) {
+      console.warn('[fetchBalita] Warning fetch hasil penimbangan:', hasilError.message)
+    }
+
+    // Map hasil penimbangan ke balita (ambil data terbaru/terakhir)
+    const hasilMap = {}
+    if (hasilData) {
+      hasilData.forEach(h => {
+        if (h.id_bayi && !hasilMap[h.id_bayi]) {
+          hasilMap[h.id_bayi] = {
+            tinggi_badan: h.tinggi_badan,
+            berat_badan: h.berat_badan
+          }
+        }
+      })
+    }
+
+    // Merge data
+    balitaList.value = (data ?? []).map(b => ({
+      ...b,
+      tinggi_badan: hasilMap[b.id]?.tinggi_badan ?? b.tinggi_badan,
+      berat_badan: hasilMap[b.id]?.berat_badan ?? b.berat_badan
+    }))
   } catch (err) {
     tableError.value = 'Gagal memuat data: ' + (err.message ?? err)
   } finally {
