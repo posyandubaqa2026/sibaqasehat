@@ -33,29 +33,34 @@ export const useSessionStore = defineStore('session', () => {
   /**
    * Verify password dan buka session posyandu
    */
-  async function unlockSession(posyanduId, posyanduKey, password) {
-    try {
-      const isValid = await verifyPassword(posyanduKey, password)
+async function unlockSession(posyanduId, posyanduKey, password) {
+  try {
+    const isValid = await verifyPassword(posyanduKey, password)
 
-      if (isValid) {
-        unlockedPosyanduIds.value.add(posyanduId)
+    if (isValid) {
+      // Lock semua posyandu lain dulu sebelum unlock yang baru
+      unlockedPosyanduIds.value.forEach(id => {
+        if (id !== posyanduId) {
+          sessionState.clearSession(id)
+          unlockedPosyanduIds.value.delete(id)
+        }
+      })
 
-        // Mulai session dengan callback untuk onExpire
-        sessionState.startSession(posyanduId, () => {
-          handleSessionExpired(posyanduId)
-        })
+      unlockedPosyanduIds.value.add(posyanduId)
+      sessionState.startSession(posyanduId, () => {
+        handleSessionExpired(posyanduId)
+      })
+      startCountdownTimer(posyanduId)
 
-        startCountdownTimer(posyanduId)
-
-        return true
-      }
-
-      return false
-    } catch (error) {
-      console.error('[unlockSession] Error:', error)
-      throw error
+      return true
     }
+
+    return false
+  } catch (error) {
+    console.error('[unlockSession] Error:', error)
+    throw error
   }
+}
 
   /**
    * Lock session (manual lock oleh user)
@@ -83,17 +88,6 @@ export const useSessionStore = defineStore('session', () => {
    sessionExpiredPosyanduId.value = null
   }
 
-  /**
-   * Switch posyandu — lock posyandu lama saat ganti posyandu
-  */
-  function switchPosyandu(newPosyanduId) {
-    unlockedPosyanduIds.value.forEach(id => {
-      if (id !== newPosyanduId) {
-        sessionState.clearSession(id)
-        unlockedPosyanduIds.value.delete(id)
-      }
-    })
-  }
   /**
    * Start countdown timer untuk menampilkan sisa waktu
    */
@@ -148,7 +142,6 @@ export const useSessionStore = defineStore('session', () => {
     lockSession,
     handleSessionExpired,
     resetSessionExpired,
-    switchPosyandu,
     startCountdownTimer,
     stopCountdownTimer,
     clearAllSessions,

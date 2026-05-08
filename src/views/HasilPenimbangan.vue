@@ -358,12 +358,10 @@ watch(() => sessionStore.sessionExpiredPosyanduId, (expiredId) => {
 })
 
 // Reset password input setiap ganti posyandu
-watch(() => props.activePosyanduId, (newId) => {
+watch(() => props.activePosyanduId, () => {
   pwInput.value = ''
   pwError.value = ''
   showPw.value = false
-
-  if (newId) sessionStore.switchPosyandu(newId)
 
   if (!isUnlocked.value) {
     nextTick(() => pwInputRef.value?.focus())
