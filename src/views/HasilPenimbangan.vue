@@ -105,6 +105,13 @@
               </svg>
               Tambah Data
             </button>
+            <button class="btn-lock" @click="lockPage" title="Kunci halaman">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                <path d="M4.5 6.5V4a3 3 0 016 0v2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                <rect x="2" y="6.5" width="11" height="8" rx="2" stroke="currentColor" stroke-width="1.3"/>
+                <circle cx="7.5" cy="10.5" r="1" fill="currentColor"/>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -269,6 +276,37 @@
     </teleport>
 
     <!-- ═══════════════════════════════════════════════
+         MODAL SESSION EXPIRED
+         ═══════════════════════════════════════════════ -->
+    <teleport to="body">
+      <transition name="modal-fade">
+        <div class="modal-overlay" v-if="showSessionExpiredModal" @click.self="closeSessionExpiredModal">
+          <div class="modal-box modal-sm">
+            <div class="modal-header danger">
+              <h3>Sesi Berakhir</h3>
+              <button class="modal-close" @click="closeSessionExpiredModal">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body delete-body">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <circle cx="24" cy="24" r="22" fill="#FEF0F0"/>
+                <path d="M24 14v12M24 32h.01" stroke="#E55353" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <p><strong>Waktu habis, silahkan masukkan password lagi</strong></p>
+              <p class="delete-warn">Sesi Anda telah berakhir karena tidak ada aktivitas selama 30 menit.</p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-save" @click="closeSessionExpiredModal">OK</button>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </teleport>
+
+    <!-- ═══════════════════════════════════════════════
          TOAST NOTIFICATION
          ═══════════════════════════════════════════════ -->
     <transition name="toast-slide">
@@ -280,14 +318,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
-import { createClient } from '@supabase/supabase-js'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { useSessionStore } from '../stores/sessionStore'
+import { supabase } from '../lib/supabase'
 import '../assets/HasilPenimbangan.css'
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-)
+// ── Stores ──────────────────────────────────────
+const sessionStore = useSessionStore()
 
 // ── Props ──────────────────────────────────────
 const props = defineProps({
@@ -299,20 +336,35 @@ const props = defineProps({
 
 // ─────────────────────────────────────────────────────
 // PASSWORD GATE STATE
+// Menggunakan session store untuk unlock state
 // ─────────────────────────────────────────────────────
-const unlockedMap = ref({})
 const pwInput = ref('')
 const showPw = ref(false)
 const pwError = ref('')
 const pwLoading = ref(false)
 const pwInputRef = ref(null)
+const showSessionExpiredModal = ref(false)
 
-const isUnlocked = computed(() => !!unlockedMap.value[props.activePosyanduId])
+const isUnlocked = computed(() => {
+  return sessionStore.isSessionUnlocked(props.activePosyanduId)
+})
 
-watch(() => props.activePosyanduId, () => {
+// Watch session expired dari store
+watch(() => sessionStore.sessionExpiredPosyanduId, (expiredId) => {
+  if (expiredId === props.activePosyanduId) {
+    showSessionExpiredModal.value = true
+    hasilPenimbanganList.value = []
+  }
+})
+
+// Reset password input setiap ganti posyandu
+watch(() => props.activePosyanduId, (newId) => {
   pwInput.value = ''
   pwError.value = ''
   showPw.value = false
+
+  if (newId) sessionStore.switchPosyandu(newId)
+
   if (!isUnlocked.value) {
     nextTick(() => pwInputRef.value?.focus())
   } else {
@@ -325,33 +377,48 @@ async function submitPassword() {
     pwError.value = 'Password tidak boleh kosong'
     return
   }
+
   pwLoading.value = true
-  pwError.value = ''
+  pwError.value   = ''
+
   try {
     const posyanduKey = props.posyanduKeyMap[props.activePosyanduId]
     if (!posyanduKey) throw new Error('Posyandu tidak dikenali')
 
-    const { data, error } = await supabase.rpc('verify_posyandu_password', {
-      p_posyandu_key: posyanduKey,
-      p_password: pwInput.value,
-    })
+    // Gunakan session store untuk unlock
+    const isValid = await sessionStore.unlockSession(
+      props.activePosyanduId,
+      posyanduKey,
+      pwInput.value
+    )
 
-    if (error) throw new Error(`Gagal verifikasi: ${error.message}`)
-
-    if (data === true) {
-      unlockedMap.value[props.activePosyanduId] = true
+    if (isValid) {
       pwInput.value = ''
       fetchData()
+      showToast('Akses diberikan selama 30 menit', 'success')
     } else {
       pwError.value = 'Password salah. Silakan coba lagi.'
       pwInput.value = ''
       nextTick(() => pwInputRef.value?.focus())
     }
   } catch (err) {
+    console.error('[submitPassword] Error:', err.message)
     pwError.value = err.message || 'Gagal memverifikasi password. Coba lagi.'
   } finally {
     pwLoading.value = false
   }
+}
+
+function lockPage() {
+  if (props.activePosyanduId) {
+    sessionStore.lockSession(props.activePosyanduId)
+    hasilPenimbanganList.value = []
+  }
+}
+
+function closeSessionExpiredModal() {
+  showSessionExpiredModal.value = false
+  sessionStore.resetSessionExpired()
 }
 
 // ─────────────────────────────────────────────────────
@@ -566,6 +633,20 @@ function formatDate(d) {
   if (!d) return '–'
   return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
 }
+
+// ─────────────────────────────────────────────────────
+// LIFECYCLE HOOKS
+// ─────────────────────────────────────────────────────
+onMounted(() => {
+  if (isUnlocked.value) {
+    fetchData()
+  }
+})
+
+onBeforeUnmount(() => {
+  // Cleanup saat component unmount
+  // Jangan lock session, biarkan tetap aktif saat user pindah halaman
+})
 </script>
 
 

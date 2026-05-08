@@ -136,7 +136,7 @@
             <path d="M10 6v4M10 14h.01" stroke="#E55353" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
           {{ tableError }}
-          <button @click="fetchBalita">Coba Lagi</button>
+          <button @click="fetchData">Coba Lagi</button>
         </div>
 
         <!-- ── Empty ── -->
@@ -321,6 +321,37 @@
       </transition>
     </teleport>
 
+    <!-- ═══════════════════════════════════════════════
+         MODAL SESSION EXPIRED
+         ═══════════════════════════════════════════════ -->
+    <teleport to="body">
+      <transition name="modal-fade">
+        <div class="modal-overlay" v-if="showSessionExpiredModal" @click.self="closeSessionExpiredModal">
+          <div class="modal-box modal-sm">
+            <div class="modal-header danger">
+              <h3>Sesi Berakhir</h3>
+              <button class="modal-close" @click="closeSessionExpiredModal">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body delete-body">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <circle cx="24" cy="24" r="22" fill="#FEF0F0"/>
+                <path d="M24 14v12M24 32h.01" stroke="#E55353" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <p><strong>Waktu habis, silahkan masukkan password lagi</strong></p>
+              <p class="delete-warn">Sesi Anda telah berakhir karena tidak ada aktivitas selama 30 menit.</p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-save" @click="closeSessionExpiredModal">OK</button>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </teleport>
+
     <!-- Toast Notifikasi -->
     <teleport to="body">
       <transition name="toast">
@@ -342,14 +373,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
-import { createClient } from '@supabase/supabase-js'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { useSessionStore } from '../stores/sessionStore'
+import { supabase } from '../lib/supabase'
 import '../assets/DataBalita.css'
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-)
+// ── Stores ─────────────────────────────────────
+const sessionStore = useSessionStore()
 
 // ── Props ──────────────────────────────────────
 const props = defineProps({
@@ -369,26 +399,39 @@ const props = defineProps({
 
 // ─────────────────────────────────────────────────────
 // PASSWORD GATE STATE
-// Menyimpan unlock state per posyandu di session memory
-// -─────────────────────────────────────────────────────
-const unlockedMap = ref({})   // { [posyanduId]: true }
+// Menggunakan session store untuk unlock state
+// ─────────────────────────────────────────────────────
 const pwInput     = ref('')
 const showPw      = ref(false)
 const pwError     = ref('')
 const pwLoading   = ref(false)
 const pwInputRef  = ref(null)
+const showSessionExpiredModal = ref(false)
 
-const isUnlocked = computed(() => !!unlockedMap.value[props.activePosyanduId])
+const isUnlocked = computed(() => {
+  return sessionStore.isSessionUnlocked(props.activePosyanduId)
+})
+
+// Watch session expired dari store
+watch(() => sessionStore.sessionExpiredPosyanduId, (expiredId) => {
+  if (expiredId === props.activePosyanduId) {
+    showSessionExpiredModal.value = true
+    balitaList.value = []
+  }
+})
 
 // Reset password input setiap ganti posyandu
-watch(() => props.activePosyanduId, () => {
+watch(() => props.activePosyanduId, (newId) => {
   pwInput.value = ''
   pwError.value = ''
   showPw.value  = false
+
+  if (newId) sessionStore.switchPosyandu(newId)
+
   if (!isUnlocked.value) {
     nextTick(() => pwInputRef.value?.focus())
   } else {
-    fetchBalita()
+    fetchData()
   }
 })
 
@@ -397,29 +440,25 @@ async function submitPassword() {
     pwError.value = 'Password tidak boleh kosong'
     return
   }
+
   pwLoading.value = true
   pwError.value   = ''
+
   try {
     const posyanduKey = props.posyanduKeyMap[props.activePosyanduId]
     if (!posyanduKey) throw new Error('Posyandu tidak dikenali')
 
-    // Panggil RPC function di Supabase (SECURITY DEFINER — password aman)
-    const { data, error } = await supabase.rpc('verify_posyandu_password', {
-      p_posyandu_key: posyanduKey,
-      p_password:     pwInput.value,
-    })
+    // Gunakan session store untuk unlock
+    const isValid = await sessionStore.unlockSession(
+      props.activePosyanduId,
+      posyanduKey,
+      pwInput.value
+    )
 
-    if (error) {
-      console.error('[submitPassword] RPC Error:', error)
-      throw new Error(`Gagal verifikasi: ${error.message}`)
-    }
-
-    console.log('[submitPassword] RPC Result:', data)
-
-    if (data === true) {
-      unlockedMap.value[props.activePosyanduId] = true
+    if (isValid) {
       pwInput.value = ''
-      fetchBalita()
+      fetchData()
+      showToast('Akses diberikan selama 30 menit', 'success')
     } else {
       pwError.value = 'Password salah. Silakan coba lagi.'
       pwInput.value = ''
@@ -435,10 +474,14 @@ async function submitPassword() {
 
 function lockPage() {
   if (props.activePosyanduId) {
-    delete unlockedMap.value[props.activePosyanduId]
-    unlockedMap.value = { ...unlockedMap.value }
+    sessionStore.lockSession(props.activePosyanduId)
     balitaList.value = []
   }
+}
+
+function closeSessionExpiredModal() {
+  showSessionExpiredModal.value = false
+  sessionStore.resetSessionExpired()
 }
 
 // ─────────────────────────────────────────────────────
@@ -465,7 +508,7 @@ const filteredBalita = computed(() => {
   return list
 })
 
-async function fetchBalita() {
+async function fetchData() {
   if (!props.activePosyanduId) return
   const tableBalita = props.posyanduTableMap[props.activePosyanduId]
   if (!tableBalita) return
@@ -486,6 +529,20 @@ async function fetchBalita() {
     tableLoading.value = false
   }
 }
+
+// ─────────────────────────────────────────────────────
+// LIFECYCLE HOOKS
+// ─────────────────────────────────────────────────────
+onMounted(() => {
+    if (isUnlocked.value) {  // tambah ini
+    fetchData()
+  }
+})
+
+onBeforeUnmount(() => {
+  // Cleanup saat component unmount
+  // Jangan lock session, biarkan tetap aktif saat user pindah halaman
+})
 
 // ─────────────────────────────────────────────────────
 // MODAL / FORM
@@ -566,7 +623,7 @@ async function saveBalita() {
     }
 
     closeModal()
-    await fetchBalita()
+    await fetchData()
   } catch (err) {
     console.error(err)
     showToast('Gagal menyimpan: ' + (err.message ?? err), 'error')
@@ -599,7 +656,7 @@ async function deleteBalita() {
     if (error) throw error
     showToast('Data berhasil dihapus', 'success')
     showDeleteModal.value = false
-    await fetchBalita()
+    await fetchData()
   } catch (err) {
     showToast('Gagal menghapus: ' + (err.message ?? err), 'error')
   } finally {

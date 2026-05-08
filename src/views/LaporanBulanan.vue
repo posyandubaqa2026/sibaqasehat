@@ -121,7 +121,7 @@
             <path d="M10 6v4M10 14h.01" stroke="#E55353" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
           {{ tableError }}
-          <button @click="fetchBalita">Coba Lagi</button>
+          <button @click="fetchData">Coba Lagi</button>
         </div>
 
         <!-- Empty -->
@@ -336,33 +336,35 @@
                       stroke="#2F9D94" stroke-width="1" stroke-dasharray="3 2" opacity="0.6"
                     />
 
-                    <!-- Child dot -->
-                    <g v-if="childAge !== null && selectedBalita?.berat_badan && childAge <= 60">
-                      <!-- outer ring -->
-                      <circle
-                        :cx="xScale(childAge)"
-                        :cy="yScale(selectedBalita.berat_badan)"
-                        r="7" :fill="dotColor" opacity="0.2"
-                      />
-                      <!-- inner dot -->
-                      <circle
-                        :cx="xScale(childAge)"
-                        :cy="yScale(selectedBalita.berat_badan)"
-                        r="4.5" :fill="dotColor" stroke="white" stroke-width="1.5"
-                      />
-                      <!-- tooltip bubble -->
-                      <g>
-                        <rect
-                          :x="xScale(childAge) - 24"
-                          :y="yScale(selectedBalita.berat_badan) - 26"
-                          width="48" height="18" rx="5"
-                          :fill="dotColor"
+                    <!-- Child dots (multiple weighings) -->
+                    <g v-if="childAge !== null && childAge <= 60">
+                      <g v-for="(h, idx) in (selectedBalita?.hasil_penimbangan ?? [])" :key="`dot-${idx}`">
+                        <!-- outer ring -->
+                        <circle
+                          :cx="xScale(childAge)"
+                          :cy="yScale(h.berat_badan)"
+                          r="7" :fill="dotColor" opacity="0.2"
                         />
-                        <text
-                          :x="xScale(childAge)"
-                          :y="yScale(selectedBalita.berat_badan) - 13"
-                          text-anchor="middle" font-size="9" fill="white" font-weight="700"
-                        >{{ selectedBalita.berat_badan }} kg</text>
+                        <!-- inner dot -->
+                        <circle
+                          :cx="xScale(childAge)"
+                          :cy="yScale(h.berat_badan)"
+                          r="4.5" :fill="dotColor" stroke="white" stroke-width="1.5"
+                        />
+                        <!-- tooltip bubble -->
+                        <g>
+                          <rect
+                            :x="xScale(childAge) - 24"
+                            :y="yScale(h.berat_badan) - 26"
+                            width="48" height="18" rx="5"
+                            :fill="dotColor"
+                          />
+                          <text
+                            :x="xScale(childAge)"
+                            :y="yScale(h.berat_badan) - 13"
+                            text-anchor="middle" font-size="9" fill="white" font-weight="700"
+                          >{{ h.berat_badan }} kg</text>
+                        </g>
                       </g>
                     </g>
 
@@ -395,6 +397,37 @@
       </transition>
     </teleport>
 
+    <!-- ═══════════════════════════════════════════════
+         MODAL SESSION EXPIRED
+         ═══════════════════════════════════════════════ -->
+    <teleport to="body">
+      <transition name="modal-fade">
+        <div class="modal-overlay" v-if="showSessionExpiredModal" @click.self="closeSessionExpiredModal">
+          <div class="modal-box modal-sm">
+            <div class="modal-header danger">
+              <h3>Sesi Berakhir</h3>
+              <button class="modal-close" @click="closeSessionExpiredModal">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body delete-body">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <circle cx="24" cy="24" r="22" fill="#FEF0F0"/>
+                <path d="M24 14v12M24 32h.01" stroke="#E55353" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <p><strong>Waktu habis, silahkan masukkan password lagi</strong></p>
+              <p class="delete-warn">Sesi Anda telah berakhir karena tidak ada aktivitas selama 30 menit.</p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-save" @click="closeSessionExpiredModal">OK</button>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </teleport>
+
     <!-- Toast -->
     <teleport to="body">
       <transition name="toast">
@@ -406,14 +439,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
-import { createClient } from '@supabase/supabase-js'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { useSessionStore } from '../stores/sessionStore'
+import { supabase } from '../lib/supabase'
 import '../assets/LaporanBulanan.css'
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-)
+// ── Stores ────────────────────────────────────────
+const sessionStore = useSessionStore()
 
 // ── Props ────────────────────────────────────────────────
 const props = defineProps({
@@ -423,43 +455,68 @@ const props = defineProps({
   posyanduTableMap:   { type: Object, default: () => ({}) },
 })
 
-// ── Password Gate ────────────────────────────────────────
-const unlockedMap = ref({})
+// ─────────────────────────────────────────────────────
+// PASSWORD GATE STATE
+// Menggunakan session store untuk unlock state
+// ─────────────────────────────────────────────────────
 const pwInput     = ref('')
 const showPw      = ref(false)
 const pwError     = ref('')
 const pwLoading   = ref(false)
 const pwInputRef  = ref(null)
+const showSessionExpiredModal = ref(false)
 
-const isUnlocked = computed(() => !!unlockedMap.value[props.activePosyanduId])
+const isUnlocked = computed(() => {
+  return sessionStore.isSessionUnlocked(props.activePosyanduId)
+})
 
-watch(() => props.activePosyanduId, () => {
+// Watch session expired dari store
+watch(() => sessionStore.sessionExpiredPosyanduId, (expiredId) => {
+  if (expiredId === props.activePosyanduId) {
+    showSessionExpiredModal.value = true
+    balitaList.value = []
+  }
+})
+
+// Reset password input setiap ganti posyandu
+watch(() => props.activePosyanduId, (newId) => {
   pwInput.value = ''
   pwError.value = ''
   showPw.value  = false
+
+  if (newId) sessionStore.switchPosyandu(newId)
+
   if (!isUnlocked.value) {
     nextTick(() => pwInputRef.value?.focus())
   } else {
-    fetchBalita()
+    fetchData()
   }
 })
 
 async function submitPassword() {
-  if (!pwInput.value.trim()) { pwError.value = 'Password tidak boleh kosong'; return }
+  if (!pwInput.value.trim()) {
+    pwError.value = 'Password tidak boleh kosong'
+    return
+  }
+
   pwLoading.value = true
   pwError.value   = ''
+
   try {
     const posyanduKey = props.posyanduKeyMap[props.activePosyanduId]
     if (!posyanduKey) throw new Error('Posyandu tidak dikenali')
-    const { data, error } = await supabase.rpc('verify_posyandu_password', {
-      p_posyandu_key: posyanduKey,
-      p_password:     pwInput.value,
-    })
-    if (error) throw new Error(`Gagal verifikasi: ${error.message}`)
-    if (data === true) {
-      unlockedMap.value[props.activePosyanduId] = true
+
+    // Gunakan session store untuk unlock
+    const isValid = await sessionStore.unlockSession(
+      props.activePosyanduId,
+      posyanduKey,
+      pwInput.value
+    )
+
+    if (isValid) {
       pwInput.value = ''
-      fetchBalita()
+      fetchData()
+      showToast('Akses diberikan selama 30 menit', 'success')
     } else {
       pwError.value = 'Password salah. Silakan coba lagi.'
       pwInput.value = ''
@@ -474,10 +531,14 @@ async function submitPassword() {
 
 function lockPage() {
   if (props.activePosyanduId) {
-    delete unlockedMap.value[props.activePosyanduId]
-    unlockedMap.value = { ...unlockedMap.value }
+    sessionStore.lockSession(props.activePosyanduId)
     balitaList.value  = []
   }
+}
+
+function closeSessionExpiredModal() {
+  showSessionExpiredModal.value = false
+  sessionStore.resetSessionExpired()
 }
 
 // ── Data ─────────────────────────────────────────────────
@@ -502,7 +563,7 @@ const filteredBalita = computed(() => {
   return list
 })
 
-async function fetchBalita() {
+async function fetchData() {
   if (!props.activePosyanduId) return
   const tableName = props.posyanduTableMap[props.activePosyanduId]
   if (!tableName) return
@@ -525,13 +586,20 @@ async function fetchBalita() {
     const hasilMap = {}
     if (hasilData) {
       hasilData.forEach(h => {
-        if (h.id_bayi && !hasilMap[h.id_bayi]) hasilMap[h.id_bayi] = { berat_badan: h.berat_badan }
+        if (h.id_bayi) {
+          if (!hasilMap[h.id_bayi]) hasilMap[h.id_bayi] = []
+          hasilMap[h.id_bayi].push({
+            berat_badan: h.berat_badan,
+            created_at: h.created_at
+          })
+        }
       })
     }
 
     balitaList.value = (data ?? []).map(b => ({
       ...b,
-      berat_badan: hasilMap[b.id]?.berat_badan ?? b.berat_badan,
+      berat_badan: hasilMap[b.id]?.[0]?.berat_badan ?? b.berat_badan,
+      hasil_penimbangan: hasilMap[b.id] ?? [],
     }))
   } catch (err) {
     tableError.value = 'Gagal memuat data: ' + (err.message ?? err)
@@ -553,6 +621,16 @@ function closeModal() {
   showModal.value = false
   document.body.style.overflow = ''
 }
+
+// Update selectedBalita ketika balitaList berubah (auto-refresh data di modal)
+watch(() => balitaList.value, () => {
+  if (selectedBalita.value && showModal.value) {
+    const updated = balitaList.value.find(b => b.id === selectedBalita.value.id)
+    if (updated) {
+      selectedBalita.value = updated
+    }
+  }
+}, { deep: true })
 
 // ── Helpers ───────────────────────────────────────────────
 function calcAgeMonths(dob) {
@@ -778,17 +856,46 @@ function fillZone(data, keyBottom, keyTop) {
   return [...top, ...bottom].join(' ')
 }
 
-const gridMonths  = [0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60]
-const xTicks      = [0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60]
-const gridWeights = [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
+const gridMonths  = Array.from({ length: 61 }, (_, i) => i) // 0-60 setiap bulan
+const xTicks = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+  11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+  21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+  31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+  41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+  51, 52, 53, 54, 55, 56, 57, 58, 59, 60
+]
+
+const gridWeights = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+  11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+  21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+  31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+  41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+  51, 52, 53, 54, 55, 56, 57, 58, 59, 60
+]
 
 // ── Toast ─────────────────────────────────────────────────
 const toast = ref({ show: false, msg: '', type: 'success' })
 let toastTimer = null
-// eslint-disable-next-line no-unused-vars
 function showToast(msg, type = 'success') {
   clearTimeout(toastTimer)
   toast.value = { show: true, msg, type }
   toastTimer  = setTimeout(() => { toast.value.show = false }, 3200)
 }
+
+// ─────────────────────────────────────────────────────
+// LIFECYCLE HOOKS
+// ─────────────────────────────────────────────────────
+onMounted(() => {
+  if (isUnlocked.value) {  // tambah ini
+    fetchData()
+  }
+})
+
+
+onBeforeUnmount(() => {
+  // Cleanup saat component unmount
+  // Jangan lock session, biarkan tetap aktif saat user pindah halaman
+})
 </script>

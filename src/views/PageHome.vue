@@ -237,7 +237,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../lib/supabase'
 import NavBar from '../components/NavBar.vue'
 import SideNavBar from '../components/SideNavBar.vue'
 import DataBalita from './DataBalita.vue'
@@ -246,11 +246,6 @@ import KlasifikasiBalita from './KlasifikasiBalita.vue'
 import LaporanBulanan from './LaporanBulanan.vue'
 import { navItems, reportItems, allNav } from '../data/navigationData.js'
 import '../assets/PageHome.css'
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-)
 
 const POSYANDU_VAULT_KEYS = [
   'kacang_hijau', 'labu',
