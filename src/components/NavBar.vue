@@ -26,6 +26,7 @@
           <span class="date-text">{{ today }}</span>
         </div>
 
+        <!-- Hapus ini -->
         <div class="notif-btn" @click="showNotif = !showNotif" aria-label="Notifikasi">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M9 2a5.5 5.5 0 00-5.5 5.5v3L2 12v1h14v-1l-1.5-1.5v-3A5.5 5.5 0 009 2z"
@@ -48,6 +49,7 @@
           <div class="notif-empty" v-if="!notifications.length">Tidak ada notifikasi</div>
         </div>
       </div>
+      <!-- Sampe sini -->
     </header>
 
     <!-- Navigation Tabs -->

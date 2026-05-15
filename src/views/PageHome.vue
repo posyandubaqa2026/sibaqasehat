@@ -75,19 +75,21 @@
           <!-- Kunjungan Bulanan -->
           <div class="chart-card wide">
             <div class="card-header">
-              <h3>Kunjungan Bulanan 2025</h3>
+              <h3>Kunjungan Bulanan {{ currentYear }}</h3>
               <div class="chart-legend">
                 <span class="legend-dot" style="background:#2F9D94"></span> Balita
-                <span class="legend-dot" style="background:#025F67"></span> Bumil
               </div>
             </div>
+
             <div class="bar-chart">
               <div class="bar-group" v-for="(m, i) in visibleMonthlyData" :key="i">
-                <div class="bars">
-                  <div class="bar balita" :style="{ height: (m.balita/maxVal*120)+'px' }"
-                    :title="`Balita: ${m.balita}`"></div>
-                  <div class="bar bumil" :style="{ height: (m.bumil/maxVal*120)+'px' }"
-                    :title="`Bumil: ${m.bumil}`"></div>
+                <div class="bars single-bar">
+                  <span class="bar-value">{{ m.balita }}</span>
+                  <div
+                    class="bar balita"
+                    :style="{ height: (m.balita / maxVal * 120) + 'px' }"
+                    :title="`Balita: ${m.balita}`"
+                  ></div>
                 </div>
                 <span class="bar-label">{{ m.label }}</span>
               </div>
@@ -125,9 +127,8 @@
           </div>
         </div>
 
-        <!-- Posyandu Grid & Upcoming -->
+        <!-- Posyandu Grid -->
         <div class="lower-row">
-          <!-- 8 Posyandu Cards -->
           <div class="posyandu-section">
             <div class="section-header">
               <h3>Status 8 Posyandu</h3>
@@ -141,19 +142,22 @@
               <!-- Data asli -->
               <template v-else>
                 <div class="posyandu-card" v-for="p in posyanduStats" :key="p.nama">
-                <div class="posyandu-card-top">
-                  <div class="posyandu-num">{{ p.num }}</div>
-                  <span class="posyandu-status" :class="p.status === 'Aktif' ? 'aktif' : 'libur'">
-                    {{ p.status }}
-                  </span>
+                  <div class="posyandu-card-top">
+                    <div class="posyandu-num">{{ p.num }}</div>
+                    <span class="posyandu-status" :class="p.status === 'Aktif' ? 'aktif' : 'libur'">
+                      {{ p.status }}
+                    </span>
+                  </div>
+
+                  <div class="posyandu-name">{{ p.nama }}</div>
+
+                  <div class="posyandu-stats">
+                    <div class="pstat">
+                      <span>{{ p.balita }}</span>
+                      <label>Balita</label>
+                    </div>
+                  </div>
                 </div>
-                <div class="posyandu-name">{{ p.nama }}</div>
-                <div class="posyandu-ketua">{{ p.ketua }}</div>
-                <div class="posyandu-stats">
-                  <div class="pstat"><span>{{ p.balita }}</span><label>Balita</label></div>
-                  <div class="pstat"><span>{{ p.bumil }}</span><label>Bumil</label></div>
-                </div>
-              </div>
               </template>
             </div>
           </div>
@@ -201,7 +205,7 @@
         />
       </div>
 
-      <!-- PLACEHOLDER PAGES (untuk halaman lain yang belum jadi) -->
+      <!-- PLACEHOLDER PAGES -->
       <div class="content-area placeholder-page" v-else>
         <div class="no-posyandu-selected"
           v-if="['bumil','imunisasi','kegiatan','stok'].includes(activeNav) && activeTab === null">
@@ -247,29 +251,47 @@ import LaporanBulanan from './LaporanBulanan.vue'
 import { navItems, reportItems, allNav } from '../data/navigationData.js'
 import '../assets/PageHome.css'
 
+// ──────────────────────────────────────────────
+// Constants
+// ──────────────────────────────────────────────
 const POSYANDU_VAULT_KEYS = [
   'kacang_hijau', 'labu',
-  'lobak', 'seledri',
-  'singkil', 'terong',
-  'tomat', 'wortel',
+  'lobak',        'seledri',
+  'singkil',      'terong',
+  'tomat',        'wortel',
 ]
 
 const POSYANDU_TABLES = [
-  'balita_kacang_hijau',  'balita_labu',
-  'balita_lobak',         'balita_seledri',
-  'balita_singkil',       'balita_terong',
-  'balita_tomat',         'balita_wortel',
+  'balita_kacang_hijau', 'balita_labu',
+  'balita_lobak',        'balita_seledri',
+  'balita_singkil',      'balita_terong',
+  'balita_tomat',        'balita_wortel',
+]
+
+const PENIMBANGAN_TABLES = [
+  'hasil_penimbangan_kacang_hijau', 'hasil_penimbangan_labu',
+  'hasil_penimbangan_lobak',        'hasil_penimbangan_seledri',
+  'hasil_penimbangan_singkil',      'hasil_penimbangan_terong',
+  'hasil_penimbangan_tomat',        'hasil_penimbangan_wortel',
+]
+
+const POSYANDU_NAMES = [
+  'Posyandu Kacang Hijau', 'Posyandu Labu',
+  'Posyandu Lobak',        'Posyandu Seledri',
+  'Posyandu Singkil',      'Posyandu Terong',
+  'Posyandu Tomat',        'Posyandu Wortel',
 ]
 
 const posyanduKeyMap   = ref({})
 const posyanduTableMap = ref({})
-
 
 // ──────────────────────────────────────────────
 // State
 // ──────────────────────────────────────────────
 const sidebarCollapsed = ref(false)
 const activeNav        = ref('dashboard')
+// null = tab "Dashboard" → tampilkan TOTAL semua posyandu
+// id   = tab posyandu tertentu → tampilkan data posyandu itu saja
 const activeTab        = ref(null)
 const mobileNavOpen    = ref(false)
 
@@ -279,27 +301,22 @@ const currentUser = ref({
   posyandu_id: null,
 })
 
-const notifications = ref([
-  { id: 1, msg: '3 jadwal kegiatan besok' },
-  { id: 2, msg: 'Stok vitamin A hampir habis' },
-])
-
 // ──────────────────────────────────────────────
-// Data (dummy – replace with Supabase queries)
+// Date helpers
 // ──────────────────────────────────────────────
 const today = computed(() =>
   new Date().toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
 )
-
 const todayShort = computed(() =>
   new Date().toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' })
 )
 
-// posyanduList diisi dari Supabase saat fetchDashboardData()
+const currentYear = computed(() => new Date().getFullYear())
+
 const posyanduList = ref([])
 
 // ──────────────────────────────────────────────
-// Computed Properties
+// Computed
 // ──────────────────────────────────────────────
 const currentPageTitle = computed(() =>
   allNav.find(n => n.id === activeNav.value)?.label ?? 'Dashboard'
@@ -307,65 +324,83 @@ const currentPageTitle = computed(() =>
 const currentNavIcon = computed(() =>
   allNav.find(n => n.id === activeNav.value)?.icon ?? ''
 )
-
 const userInitials = computed(() =>
   currentUser.value.nama.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 )
-
 const roleLabel = computed(() => ({
   admin: 'Administrator',
   kader: 'Kader Posyandu',
   bidan: 'Bidan',
 }[currentUser.value.role] ?? 'Pengguna'))
 
-// Diisi dari Supabase — nilai awal '–' sebagai loading state
-const statCardsRaw = ref([
-  { label: 'Total Balita',       value: '–', icon: iconBalita(),   color: '#2F9D94', trend: 0 },
-  { label: 'Ibu Hamil Aktif',    value: '–', icon: iconBumil(),    color: '#025F67', trend: 0 },
-  { label: 'Kegiatan Bulan Ini', value: '–', icon: iconKegiatan(), color: '#063154', trend: 0 },
-])
+// ──────────────────────────────────────────────
+// Data: totals & per-posyandu stats
+// ──────────────────────────────────────────────
 
-// Computed untuk menampilkan statCards berdasarkan posyandu aktif
+// Grand totals (dipakai saat tab Dashboard / activeTab === null)
+const totalBalitaAll      = ref(0)
+const totalPenimbanganAll = ref(0)
+
+// Per-posyandu stats — masing-masing item punya field `penimbangan`
+const posyanduStats = ref([])
+
+// ──────────────────────────────────────────────
+// Stat Cards
+// Reaktif terhadap activeTab:
+//   null → total semua posyandu
+//   id   → data posyandu yang dipilih
+// ──────────────────────────────────────────────
 const statCards = computed(() => {
-  if (!activeTab.value || posyanduStats.value.length === 0) {
-    return statCardsRaw.value
+  if (isLoading.value) {
+    return [
+      { label: 'Total Balita',                value: '…', icon: iconBalita(),      color: '#2F9D94', trend: 0 },
+      { label: 'Total Penimbangan Bulan Ini', value: '…', icon: iconPenimbangan(), color: '#063154', trend: 0 },
+    ]
   }
 
-  const activePosyandu = posyanduStats.value.find(p => p.id === activeTab.value)
-  if (!activePosyandu) return statCardsRaw.value
+  // Tab "Dashboard" → tampilkan total semua posyandu
+  if (activeTab.value === null) {
+    return [
+      { label: 'Total Balita',                value: String(totalBalitaAll.value),      icon: iconBalita(),      color: '#2F9D94', trend: 0 },
+      { label: 'Total Penimbangan Bulan Ini', value: String(totalPenimbanganAll.value), icon: iconPenimbangan(), color: '#063154', trend: 0 },
+    ]
+  }
+
+  // Tab posyandu tertentu → tampilkan data posyandu itu saja
+  const p = posyanduStats.value.find(ps => ps.id === activeTab.value)
+  if (!p) {
+    return [
+      { label: 'Total Balita',                value: '–', icon: iconBalita(),      color: '#2F9D94', trend: 0 },
+      { label: 'Total Penimbangan Bulan Ini', value: '–', icon: iconPenimbangan(), color: '#063154', trend: 0 },
+    ]
+  }
 
   return [
-    { ...statCardsRaw.value[0], value: String(activePosyandu.balita) },
-    { ...statCardsRaw.value[1], value: String(activePosyandu.bumil) },
-    statCardsRaw.value[2], // Kegiatan tetap dari ringkasan
+    { label: 'Total Balita',                value: String(p.balita),      icon: iconBalita(),      color: '#2F9D94', trend: 0 },
+    { label: 'Total Penimbangan Bulan Ini', value: String(p.penimbangan), icon: iconPenimbangan(), color: '#063154', trend: 0 },
   ]
 })
 
-const monthlyData = ref([
-  { label:'Jan', balita:80,  bumil:15 },
-  { label:'Feb', balita:92,  bumil:18 },
-  { label:'Mar', balita:75,  bumil:12 },
-  { label:'Apr', balita:110, bumil:20 },
-  { label:'Mei', balita:98,  bumil:17 },
-  { label:'Jun', balita:88,  bumil:14 },
-  { label:'Jul', balita:120, bumil:22 },
-  { label:'Agu', balita:105, bumil:19 },
-  { label:'Sep', balita:95,  bumil:16 },
-  { label:'Okt', balita:112, bumil:21 },
-  { label:'Nov', balita:88,  bumil:13 },
-  { label:'Des', balita:100, bumil:18 },
-])
+// ──────────────────────────────────────────────
+// Chart data (dummy — bisa diganti Supabase)
+// ──────────────────────────────────────────────
+const monthLabels = [
+  'Jan', 'Feb', 'Mar', 'Apr',
+  'Mei', 'Jun', 'Jul', 'Agu',
+  'Sep', 'Okt', 'Nov', 'Des',
+]
 
-// On small screens, show only last 6 months to avoid overflow
-const visibleMonthlyData = computed(() => {
-  if (typeof window !== 'undefined' && window.innerWidth < 640) {
-    return monthlyData.value.slice(6)
-  }
-  return monthlyData.value
-})
+const monthlyData = ref(
+  monthLabels.map(label => ({
+    label,
+    balita: 0,
+  }))
+)
+
+const visibleMonthlyData = computed(() => monthlyData.value)
 
 const maxVal = computed(() =>
-  Math.max(...monthlyData.value.map(m => Math.max(m.balita, m.bumil)))
+  Math.max(1, ...monthlyData.value.map(m => m.balita))
 )
 
 const giziData = [
@@ -387,18 +422,14 @@ const donutSegments = computed(() => {
   })
 })
 
-// Diisi dari v_ringkasan_posyandu
-const posyanduStats = ref([])
-
-// Mobile bottom nav shortcuts
 const mobileNavItems = computed(() =>
   (allNav ?? navItems ?? []).slice(0, 5)
 )
 
 // ──────────────────────────────────────────────
-// Loading & Error State
+// Loading & Error
 // ──────────────────────────────────────────────
-const isLoading = ref(true)
+const isLoading  = ref(true)
 const fetchError = ref(null)
 
 // ──────────────────────────────────────────────
@@ -409,75 +440,124 @@ async function fetchDashboardData() {
   fetchError.value = null
 
   try {
-    // ── 1. Total Balita dari v_semua_balita ──────
-    // eslint-disable-next-line no-unused-vars
-    const { count: totalBalitaCount, error: errBalita } = await supabase
-      .from('v_semua_balita')
-      .select('*', { count: 'exact', head: true })
-
-    if (errBalita) throw errBalita
-
-    // ── 2. Ringkasan per posyandu dari view ──────
     const { data: ringkasan, error: errRingkasan } = await supabase
       .from('v_ringkasan_posyandu')
-      .select('id, nama, ketua, total_bumil, kegiatan_terjadwal')
+      .select('id, nama')
       .order('nama')
 
     if (errRingkasan) throw errRingkasan
 
-    // ── 3. Hitung total balita per posyandu dari tabel individual ──
-    const table_mappings = [
-      'balita_kacang_hijau', 'balita_labu',
-      'balita_lobak', 'balita_seledri',
-      'balita_singkil', 'balita_terong',
-      'balita_tomat', 'balita_wortel'
-    ]
-    const posyandu_names = [
-      'Posyandu Kacang Hijau', 'Posyandu Labu',
-      'Posyandu Lobak', 'Posyandu Seledri',
-      'Posyandu Singkil', 'Posyandu Terong',
-      'Posyandu Tomat', 'Posyandu Wortel'
-    ]
+    function formatLocalDate(date) {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
 
-    const balitaCounts = {}
-    for (let i = 0; i < table_mappings.length; i++) {
-      const { count, error } = await supabase
-        .from(table_mappings[i])
-        .select('*', { count: 'exact', head: true })
-      if (!error) {
-        balitaCounts[posyandu_names[i]] = count || 0
-      }
+      return `${year}-${month}-${day}`
     }
 
-    // Isi posyanduStats dengan data dari ringkasan + balita counts
-    posyanduStats.value = ringkasan.map((p, i) => {
-      const posyanduName = p.nama
-      return {
-        num:    String(i + 1).padStart(2, '0'),
-        id:     p.id,
-        nama:   p.nama.replace('Posyandu ', ''),
-        ketua:  p.ketua ?? '–',
-        status: 'Aktif',
-        balita: balitaCounts[posyanduName] ?? 0,
-        bumil:  p.total_bumil   ?? 0,
-      }
-    })
+    const now = new Date()
+    const year = currentYear.value
 
-    // Isi posyanduList untuk NavBar dropdown
-    posyanduList.value = ringkasan.map(p => ({ id: p.id, nama: p.nama }))
+    const startOfMonth = formatLocalDate(
+      new Date(now.getFullYear(), now.getMonth(), 1)
+    )
 
-    // Bangun mapping sesuai urutan hasil query (order by nama = urutan abjad)
-    // Urutan: Kacang Hijau, Labu, Lobak, Seledri, Singkil, Terong, Tomat, Wortel
+    const startOfNextMonth = formatLocalDate(
+      new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    )
+
+    const startOfYear = formatLocalDate(
+      new Date(year, 0, 1)
+    )
+
+    const startOfNextYear = formatLocalDate(
+      new Date(year + 1, 0, 1)
+    )
+
+    const balitaCounts = {}
+    const penimbanganCounts = {}
+    const monthlyPenimbanganCounts = Array(12).fill(0)
+
+    await Promise.all(
+      POSYANDU_NAMES.map(async (nama, i) => {
+        const { count: cBalita, error: eBalita } = await supabase
+          .from(POSYANDU_TABLES[i])
+          .select('*', { count: 'exact', head: true })
+
+        if (eBalita) {
+          console.warn(`[Dashboard] Gagal hitung balita ${POSYANDU_TABLES[i]}:`, eBalita.message)
+          balitaCounts[nama] = 0
+        } else {
+          balitaCounts[nama] = cBalita ?? 0
+        }
+
+        const { count: cPenimbangan, error: ePenimbangan } = await supabase
+          .from(PENIMBANGAN_TABLES[i])
+          .select('*', { count: 'exact', head: true })
+          .gte('tanggal_timbang', startOfMonth)
+          .lt('tanggal_timbang', startOfNextMonth)
+
+        if (ePenimbangan) {
+          console.warn(`[Dashboard] Gagal hitung penimbangan bulan ini ${PENIMBANGAN_TABLES[i]}:`, ePenimbangan.message)
+          penimbanganCounts[nama] = 0
+        } else {
+          penimbanganCounts[nama] = cPenimbangan ?? 0
+        }
+
+        const { data: yearlyPenimbangan, error: eYearlyPenimbangan } = await supabase
+          .from(PENIMBANGAN_TABLES[i])
+          .select('tanggal_timbang')
+          .gte('tanggal_timbang', startOfYear)
+          .lt('tanggal_timbang', startOfNextYear)
+
+        if (eYearlyPenimbangan) {
+          console.warn(`[Dashboard] Gagal ambil grafik tahunan ${PENIMBANGAN_TABLES[i]}:`, eYearlyPenimbangan.message)
+        } else {
+          yearlyPenimbangan.forEach(row => {
+            if (!row.tanggal_timbang) return
+
+            const monthIndex = Number(String(row.tanggal_timbang).slice(5, 7)) - 1
+
+            if (monthIndex >= 0 && monthIndex <= 11) {
+              monthlyPenimbanganCounts[monthIndex] += 1
+            }
+          })
+        }
+      })
+    )
+
+    monthlyData.value = monthLabels.map((label, index) => ({
+      label,
+      balita: monthlyPenimbanganCounts[index] ?? 0,
+    }))
+
+    posyanduStats.value = ringkasan.map((p, i) => ({
+      num:         String(i + 1).padStart(2, '0'),
+      id:          p.id,
+      nama:        p.nama.replace('Posyandu ', ''),
+      status:      'Aktif',
+      balita:      balitaCounts[p.nama]      ?? 0,
+      penimbangan: penimbanganCounts[p.nama] ?? 0,
+    }))
+
+    totalBalitaAll.value      = Object.values(balitaCounts).reduce((a, b) => a + b, 0)
+    totalPenimbanganAll.value = Object.values(penimbanganCounts).reduce((a, b) => a + b, 0)
+
+    posyanduList.value = ringkasan.map(p => ({
+      id: p.id,
+      nama: p.nama,
+    }))
+
     const newKeyMap   = {}
     const newTableMap = {}
+
     ringkasan.forEach((p, i) => {
       newKeyMap[p.id]   = POSYANDU_VAULT_KEYS[i]
       newTableMap[p.id] = POSYANDU_TABLES[i]
     })
+
     posyanduKeyMap.value   = newKeyMap
     posyanduTableMap.value = newTableMap
-
-
   } catch (err) {
     console.error('[fetchDashboardData]', err)
     fetchError.value = err.message ?? 'Gagal memuat data dashboard.'
@@ -492,6 +572,8 @@ fetchDashboardData()
 // Navigation
 // ──────────────────────────────────────────────
 function setActiveTab(posyanduId) {
+  // null  → tab Dashboard (total semua posyandu)
+  // id    → tab posyandu tertentu
   activeTab.value = posyanduId
 }
 
@@ -512,16 +594,12 @@ function iconBalita() {
     <path d="M3 21c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
   </svg>`
 }
-function iconBumil() {
+
+function iconPenimbangan() {
   return `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-    <circle cx="11" cy="6" r="3.5" stroke="currentColor" stroke-width="1.5"/>
-    <path d="M6 12c0 4 2.5 8 5 8s5-4 5-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-  </svg>`
-}
-function iconKegiatan() {
-  return `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-    <rect x="2" y="4" width="18" height="16" rx="2.5" stroke="currentColor" stroke-width="1.5"/>
-    <path d="M2 9h18M7 2v4M15 2v4M7 13h8M7 17h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M11 3a3 3 0 100 6 3 3 0 000-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M4 19l1.5-7h11L18 19H4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M7.5 12.5C7.5 10.5 9 9 11 9s3.5 1.5 3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
   </svg>`
 }
 </script>

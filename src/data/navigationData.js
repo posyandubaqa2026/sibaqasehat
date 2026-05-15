@@ -43,14 +43,6 @@ export const reportItems = [
       <path d="M9 2v12M3 5l6 3 6-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
     </svg>`
   },
-  {
-    id: 'pengaturan', label: 'Pengaturan',
-    icon: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <circle cx="9" cy="9" r="2.5" stroke="currentColor" stroke-width="1.4"/>
-      <path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.2 3.2l1.4 1.4M13.4 13.4l1.4 1.4M3.2 14.8l1.4-1.4M13.4 4.6l1.4-1.4"
-        stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-    </svg>`
-  },
 ]
 
 // All navigation items combined

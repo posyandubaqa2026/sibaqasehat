@@ -1,0 +1,85 @@
+.grafik-tab-menu {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.grafik-tab-btn {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--white);
+  color: var(--sapphire);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, color 0.2s;
+}
+
+.grafik-tab-btn span {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.grafik-tab-btn small {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.grafik-tab-btn:hover {
+  border-color: var(--scooter);
+  background: #F8FDFC;
+}
+
+.grafik-tab-btn.active {
+  border-color: var(--scooter);
+  background: #EAF7F6;
+  box-shadow: 0 0 0 3px rgba(47, 157, 148, 0.1);
+  color: var(--scooter);
+}
+
+.grafik-tab-btn.active small {
+  color: var(--bluelagoon);
+}
+
+@media (max-width: 900px) {
+  .grafik-tab-menu {
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .grafik-tab-btn {
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .grafik-tab-menu {
+    grid-template-columns: 1fr;
+    overflow-x: visible;
+    gap: 8px;
+  }
+
+  .grafik-tab-btn {
+    min-width: 0;
+    padding: 11px 12px;
+  }
+
+  .grafik-tab-btn span {
+    font-size: 12px;
+  }
+
+  .grafik-tab-btn small {
+    font-size: 10px;
+  }
+}

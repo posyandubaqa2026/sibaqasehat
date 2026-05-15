@@ -458,7 +458,7 @@ async function submitPassword() {
     if (isValid) {
       pwInput.value = ''
       fetchData()
-      showToast('Akses diberikan selama 30 menit', 'success')
+      showToast('Akses diberikan selama 30 menit waktu aktif', 'success')
     } else {
       pwError.value = 'Password salah. Silakan coba lagi.'
       pwInput.value = ''

@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /*.json$
+Disallow: /*.xml$
+Disallow: /api/
+
+Sitemap: https://sibaqasehat.com/sitemap.xml
+
+# Crawl delay (optional, 1 second)
+Crawl-delay: 1
