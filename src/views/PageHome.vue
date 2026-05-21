@@ -520,8 +520,6 @@ async function fetchDashboardData() {
     const monthlyPenimbanganCounts = Array(12).fill(0)
     const nextGiziCountsByPosyandu = {}
 
-    giziCountsByPosyandu.value = nextGiziCountsByPosyandu
-
     await Promise.all(
       POSYANDU_NAMES.map(async (nama, i) => {
         const ringkasanItem = ringkasan.find(item => item.nama === nama)
@@ -617,6 +615,8 @@ async function fetchDashboardData() {
       })
     )
 
+    giziCountsByPosyandu.value = { ...nextGiziCountsByPosyandu }
+    
     monthlyData.value = monthLabels.map((label, index) => ({
       label,
       balita: monthlyPenimbanganCounts[index] ?? 0,
