@@ -1,17 +1,8 @@
 /* ============================================================
-   NavBar.css  –  SiBaqaSehat
-   Responsive Breakpoints:
-     Mobile Small : < 450px
-     Mobile       : 450px – 639px
-     Tablet       : 640px – 767px
-     Laptop Small : 768px – 1023px
-     Laptop Medium: 1024px – 1280px
-     Desktop      : > 1280px  ← default
+   NavBar.css  SiBaqaSehat
+   Optimized for Performance, Accessibility, Desktop, and Mobile
    ============================================================ */
 
-/* ──────────────────────────────────────────────
-   Wrapper (header + tabs bersatu satu blok)
-   ────────────────────────────────────────────── */
 .navbar-wrap {
   flex-shrink: 0;
   display: flex;
@@ -19,14 +10,16 @@
   position: sticky;
   top: 0;
   z-index: 100;
+  background: #047c75;
 }
 
-/* ──────────────────────────────────────────────
+/* ============================================================
    Top Bar
-   ────────────────────────────────────────────── */
+   ============================================================ */
+
 .NavBar {
-  height: 64px;
-  background: #2F9D94;
+  min-height: 64px;
+  background: #047c75;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -46,12 +39,13 @@
 .title-wrap {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
 }
 
 .page-title {
   font-size: 18px;
+  line-height: 1.25;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
@@ -59,15 +53,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .breadcrumb {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.35;
+  color: #e9fffd;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* ── Right side ── */
+/* ============================================================
+   Right Side
+   ============================================================ */
+
 .NavBar-right {
   display: flex;
   align-items: center;
@@ -81,247 +80,233 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.15);
-  padding: 6px 12px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  line-height: 1;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
   white-space: nowrap;
 }
+/* ============================================================
+   Hamburger
+   ============================================================ */
 
-.notif-btn {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.85);
-  transition: background 0.15s;
-  flex-shrink: 0;
-}
-.notif-btn:hover { background: rgba(255, 255, 255, 0.2); }
-
-.notif-dot {
-  position: absolute;
-  top: 6px; right: 6px;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #E55353;
-  border: 2px solid #2F9D94;
-}
-
-/* ── Notification Dropdown ── */
-.notif-dropdown {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  width: 280px;
-  background: #fff;
-  border: 1px solid #E2E8ED;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(6, 49, 84, 0.12);
-  overflow: hidden;
-  z-index: 200;
-}
-.notif-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  border-bottom: 1px solid #E2E8ED;
-  font-size: 13px;
-  font-weight: 700;
-  color: #063154;
-}
-.notif-header button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  color: #6B7B8A;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: background 0.15s;
-}
-.notif-header button:hover { background: #F7F6F2; }
-.notif-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  font-size: 12.5px;
-  color: #063154;
-  border-bottom: 1px solid #F7F6F2;
-  transition: background 0.15s;
-  cursor: default;
-}
-.notif-item:hover { background: #F7F6F2; }
-.notif-dot-sm {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: #2F9D94;
-  flex-shrink: 0;
-}
-.notif-empty {
-  padding: 16px 14px;
-  font-size: 12px;
-  color: #6B7B8A;
-  text-align: center;
-}
-
-/* ── Hamburger (tersembunyi di desktop) ── */
 .hamburger-btn {
   display: none;
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+  border: 0;
+  color: #ffffff;
   cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
+  padding: 8px;
+  border-radius: 8px;
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: background-color 0.15s ease, transform 0.15s ease;
   align-items: center;
   justify-content: center;
+  font-family: inherit;
 }
-.hamburger-btn:hover { background: rgba(255, 255, 255, 0.2); }
 
-/* ──────────────────────────────────────────────
+.hamburger-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.hamburger-btn:active {
+  transform: scale(0.97);
+}
+
+/* ============================================================
    Navigation Tabs
-   ────────────────────────────────────────────── */
+   ============================================================ */
+
 .nav-tabs {
-  background: #2F9D94;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: #047c75;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
   display: flex;
   gap: 0;
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0 24px;
   flex-wrap: nowrap;
+  scrollbar-width: none;
 }
-.nav-tabs::-webkit-scrollbar { display: none; }
+
+.nav-tabs::-webkit-scrollbar {
+  display: none;
+}
 
 .nav-tab {
-  padding: 11px 16px;
+  padding: 12px 16px;
   font-size: 13px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
-  border: none;
-  background: none;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #e9fffd;
+  border: 0;
+  background: transparent;
   cursor: pointer;
   white-space: nowrap;
   border-bottom: 3px solid transparent;
-  transition: all 0.15s;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
   position: relative;
   flex-shrink: 0;
+  font-family: inherit;
 }
+
 .nav-tab:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.1);
 }
+
 .nav-tab.active {
   color: #ffffff;
   border-bottom-color: #ffffff;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* ============================================================
-   RESPONSIVE BREAKPOINTS
+   Accessibility Focus
    ============================================================ */
 
-/* ──────────────────────────────────────────────
-   Laptop Medium: 1024px – 1280px
-   ────────────────────────────────────────────── */
+.hamburger-btn:focus-visible,
+.nav-tab:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
 @media (max-width: 1280px) {
-  .NavBar { padding: 0 20px; }
-  .nav-tabs { padding: 0 20px; }
-  .page-title { font-size: 17px; }
+  .NavBar {
+    padding: 0 20px;
+  }
+
+  .nav-tabs {
+    padding: 0 20px;
+  }
+
+  .page-title {
+    font-size: 17px;
+  }
 }
 
-/* ──────────────────────────────────────────────
-   Laptop Small: 768px – 1023px
-   ────────────────────────────────────────────── */
 @media (max-width: 1023px) {
-  .NavBar { padding: 0 18px; height: 60px; }
-  .nav-tabs { padding: 0 18px; }
-  .page-title  { font-size: 16px; }
-  .breadcrumb  { font-size: 10px; }
-  .date-badge  { font-size: 11px; padding: 5px 10px; }
-  .nav-tab     { font-size: 12px; padding: 10px 14px; }
+  .NavBar {
+    min-height: 60px;
+    padding: 0 18px;
+  }
+
+  .nav-tabs {
+    padding: 0 18px;
+  }
+
+  .page-title {
+    font-size: 16px;
+  }
+
+  .breadcrumb {
+    font-size: 10px;
+  }
+
+  .date-badge {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .nav-tab {
+    font-size: 12px;
+    padding: 11px 14px;
+  }
 }
 
-/* ──────────────────────────────────────────────
-   Tablet: 640px – 767px
-   ────────────────────────────────────────────── */
 @media (max-width: 767px) {
-  /* Hamburger disembunyikan */
-  .hamburger-btn { display: none; }
+  .hamburger-btn {
+    display: inline-flex;
+  }
 
-  .NavBar { padding: 0 16px; height: 58px; gap: 10px; }
-  .nav-tabs { padding: 0 16px; }
+  .NavBar {
+    min-height: 58px;
+    padding: 0 16px;
+    gap: 10px;
+  }
 
-  .page-title { font-size: 16px; }
+  .nav-tabs {
+    padding: 0 16px;
+  }
 
-  /* Sembunyikan breadcrumb di tablet */
-  .breadcrumb { display: none; }
+  .page-title {
+    font-size: 16px;
+  }
 
-  /* Date badge lebih ringkas */
+  .breadcrumb {
+    display: none;
+  }
+
   .date-badge {
-    padding: 5px 10px;
+    padding: 6px 10px;
     font-size: 11px;
   }
 
-  .nav-tab { padding: 10px 12px; font-size: 12px; }
-
-  /* Notif dropdown lebar penuh di tablet */
-  .notif-dropdown {
-    right: -8px;
-    width: 260px;
+  .nav-tab {
+    padding: 11px 12px;
+    font-size: 12px;
   }
 }
 
-/* ──────────────────────────────────────────────
-   Mobile: 450px – 639px
-   ────────────────────────────────────────────── */
 @media (max-width: 639px) {
-  .NavBar { padding: 0 14px; height: 56px; gap: 8px; }
-  .nav-tabs { padding: 0 12px; }
+  .NavBar {
+    min-height: 56px;
+    padding: 0 14px;
+    gap: 8px;
+  }
 
-  .page-title { font-size: 15px; }
+  .nav-tabs {
+    padding: 0 12px;
+  }
 
-  /* Sembunyikan tanggal di mobile — terlalu panjang */
-  .date-badge { display: none; }
+  .page-title {
+    font-size: 15px;
+  }
 
-  .nav-tab { padding: 9px 11px; font-size: 12px; }
+  .date-badge {
+    display: none;
+  }
 
-  .notif-dropdown {
-    position: fixed;
-    top: 56px;
-    left: 12px;
-    right: 12px;
-    width: auto;
+  .nav-tab {
+    padding: 10px 11px;
+    font-size: 12px;
   }
 }
 
-/* ──────────────────────────────────────────────
-   Mobile Small: < 450px
-   ────────────────────────────────────────────── */
 @media (max-width: 449px) {
-  .NavBar { padding: 0 12px; height: 52px; }
-  .nav-tabs { padding: 0 10px; }
+  .NavBar {
+    min-height: 52px;
+    padding: 0 12px;
+  }
 
-  .page-title { font-size: 14px; }
+  .nav-tabs {
+    padding: 0 10px;
+  }
 
-  .nav-tab { padding: 8px 10px; font-size: 11px; }
+  .page-title {
+    font-size: 14px;
+  }
 
-  /* Tabs: tampilkan hanya 3 item pertama + scroll sisanya */
-  /* Ini otomatis karena overflow-x: auto + nowrap */
+  .nav-tab {
+    padding: 10px 10px;
+    font-size: 11px;
+  }
+}
 
-  .notif-dropdown {
-    top: 52px;
-    left: 8px;
-    right: 8px;
+/* ============================================================
+   Reduced Motion
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .hamburger-btn,
+  .nav-tab,
+  .hamburger-btn:active {
+    transform: none;
   }
 }

@@ -1,6 +1,6 @@
 /* ================================================================
    KlasifikasiBalita.css
-   Full CSS + Responsive
+   Full CSS + Responsive + WHO Status Table
    Breakpoints:
      Mobile Small : < 450px
      Mobile       : 450px sampai 639px
@@ -11,19 +11,31 @@
    ================================================================ */
 
 :root {
-  --scooter:    #2F9D94;
-  --alabaster:  #F7F6F2;
-  --heather:    #BCC5CC;
+  --scooter: #2F9D94;
+  --alabaster: #F7F6F2;
+  --heather: #BCC5CC;
   --bluelagoon: #025F67;
-  --sapphire:   #063154;
-  --white:      #ffffff;
-  --text-dark:  #063154;
+  --sapphire: #063154;
+  --white: #ffffff;
+  --text-dark: #063154;
   --text-muted: #6B7B8A;
-  --border:     #E2E8ED;
+  --border: #E2E8ED;
+  --danger: #E55353;
+  --success: #16A87A;
+  --warning: #F59E0B;
+}
+
+.data-balita-wrap,
+.data-balita-wrap *,
+.data-balita-wrap *::before,
+.data-balita-wrap *::after {
+  box-sizing: border-box;
 }
 
 .data-balita-wrap {
   flex: 1;
+  width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -54,12 +66,14 @@
   font-size: 20px;
   font-weight: 600;
   color: var(--sapphire);
+  margin: 0;
 }
 
 .no-posyandu-selected p {
   font-size: 14px;
   max-width: 340px;
   line-height: 1.6;
+  margin: 0;
 }
 
 /* ================================================================
@@ -100,14 +114,14 @@
   font-size: 22px;
   font-weight: 700;
   color: var(--sapphire);
-  margin-bottom: 10px;
+  margin: 0 0 10px;
 }
 
 .gate-subtitle {
   font-size: 14px;
   color: var(--text-muted);
   line-height: 1.6;
-  margin-bottom: 32px;
+  margin: 0 0 32px;
 }
 
 .gate-subtitle strong {
@@ -128,16 +142,18 @@
   border-radius: 12px;
   padding: 0 14px;
   background: var(--alabaster);
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
 
 .input-wrap:focus-within {
   border-color: var(--scooter);
   background: var(--white);
+  box-shadow: 0 0 0 3px rgba(47, 157, 148, 0.1);
 }
 
 .input-wrap.error {
-  border-color: #E55353;
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(229, 83, 83, 0.1);
 }
 
 .input-icon {
@@ -147,6 +163,7 @@
 
 .pw-input {
   flex: 1;
+  min-width: 0;
   padding: 14px 0;
   border: none;
   background: transparent;
@@ -177,9 +194,9 @@
 
 .pw-error {
   font-size: 12px;
-  color: #E55353;
+  color: var(--danger);
   text-align: left;
-  margin-top: -6px;
+  margin: -6px 0 0;
   padding-left: 2px;
 }
 
@@ -215,7 +232,7 @@
 .gate-hint {
   font-size: 12px;
   color: var(--heather);
-  margin-top: 20px;
+  margin: 20px 0 0;
 }
 
 /* ================================================================
@@ -224,13 +241,16 @@
 
 .balita-page {
   flex: 1;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
   padding: 24px;
-  overflow: auto;
-  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ================================================================
@@ -238,58 +258,73 @@
    ================================================================ */
 
 .balita-toolbar {
-  display: flex;
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(0, auto);
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   flex-shrink: 0;
-  width: 100%;
 }
 
 .toolbar-left {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-shrink: 0;
 }
 
 .toolbar-info {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 3px;
 }
 
 .toolbar-posyandu {
+  display: block;
+  max-width: 100%;
   font-size: 16px;
   font-weight: 700;
   color: var(--sapphire);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .toolbar-count {
+  display: block;
   font-size: 12px;
   color: var(--text-muted);
+  line-height: 1.25;
 }
 
 .toolbar-right {
+  max-width: 100%;
+  min-width: 0;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  flex-wrap: nowrap;
 }
 
 .search-wrap {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 42px;
   border: 1px solid var(--border);
-  border-radius: 9px;
-  padding: 8px 12px;
-  width: 200px;
+  border-radius: 10px;
+  padding: 0 12px;
+  width: 220px;
+  min-width: 180px;
   background: var(--white);
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .search-wrap:focus-within {
   border-color: var(--scooter);
+  box-shadow: 0 0 0 3px rgba(47, 157, 148, 0.1);
 }
 
 .search-wrap svg {
@@ -305,6 +340,8 @@
   background: transparent;
   width: 100%;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .search-input::placeholder {
@@ -312,24 +349,23 @@
 }
 
 .filter-select {
+  min-height: 42px;
   border: 1px solid var(--border);
-  border-radius: 9px;
-  padding: 8px 12px;
+  border-radius: 10px;
+  padding: 0 12px;
   font-size: 13px;
   color: var(--sapphire);
   background: var(--white);
   outline: none;
   cursor: pointer;
-  transition: border-color 0.2s;
-  -webkit-appearance: none;
-  -moz-appearance: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
   appearance: none;
   background-image: none;
-  padding-right: 12px;
 }
 
 .filter-select:focus {
   border-color: var(--scooter);
+  box-shadow: 0 0 0 3px rgba(47, 157, 148, 0.1);
 }
 
 .filter-select::-ms-expand {
@@ -361,22 +397,26 @@
 }
 
 .btn-lock {
-  background: none;
+  flex: 0 0 42px;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  background: var(--white);
   border: 1px solid var(--border);
-  border-radius: 9px;
-  padding: 8px 11px;
+  border-radius: 10px;
+  padding: 0;
   color: var(--text-muted);
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
-  display: flex;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 
 .btn-lock:hover {
   border-color: var(--sapphire);
   color: var(--sapphire);
+  background: #F8FDFC;
 }
 
 /* ================================================================
@@ -385,8 +425,11 @@
 
 .table-wrap {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
-  --webkit-overflow-scrolling: touch;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--white);
@@ -404,7 +447,7 @@
 }
 
 .balita-table {
-  min-width: 700px;
+  min-width: 980px;
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
@@ -437,6 +480,9 @@
 .balita-table thead th.col-nama,
 .balita-table thead th.col-ibu,
 .balita-table thead th.col-jk,
+.balita-table thead th.col-bbu,
+.balita-table thead th.col-pbu,
+.balita-table thead th.col-bbpb,
 .balita-table thead th.col-tb,
 .balita-table thead th.col-bb,
 .balita-table thead th.col-bmi,
@@ -473,7 +519,8 @@
    ================================================================ */
 
 .col-no {
-  width: 44px;
+  width: 48px;
+  min-width: 48px;
   text-align: center;
   color: var(--text-muted);
   font-size: 12px;
@@ -482,13 +529,29 @@
 }
 
 .col-nama {
-  min-width: 140px;
+  min-width: 210px;
   padding: 13px 14px;
 }
 
 .col-ibu {
-  min-width: 120px;
+  min-width: 170px;
   padding: 13px 14px;
+  white-space: nowrap;
+}
+
+.col-jk {
+  min-width: 105px;
+  text-align: center;
+  padding: 13px 12px;
+  white-space: nowrap;
+}
+
+.col-bbu,
+.col-pbu,
+.col-bbpb {
+  min-width: 150px;
+  text-align: center;
+  padding: 13px 12px;
   white-space: nowrap;
 }
 
@@ -502,13 +565,6 @@
   min-width: 80px;
   white-space: nowrap;
   padding: 13px 12px;
-}
-
-.col-jk {
-  min-width: 70px;
-  text-align: center;
-  padding: 13px 12px;
-  white-space: nowrap;
 }
 
 .col-bb {
@@ -548,6 +604,9 @@
 .col-nama,
 .col-ibu,
 .col-jk,
+.col-bbu,
+.col-pbu,
+.col-bbpb,
 .col-tb,
 .col-bb,
 .col-bmi {
@@ -697,6 +756,92 @@
 }
 
 /* ================================================================
+   WHO STATUS BADGES
+   Untuk kolom BB/U, PB/U, dan BB/PB
+   ================================================================ */
+
+.who-status-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 118px;
+  min-height: 36px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.05;
+  text-align: center;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.who-status-badge small {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+.who-status-badge.status-baik {
+  color: #14795C;
+  background: #EDFAF4;
+  border-color: #B2EDD6;
+}
+
+.who-status-badge.status-kurang,
+.who-status-badge.status-risiko {
+  color: #B45309;
+  background: #FFF8E6;
+  border-color: #FFE0A0;
+}
+
+.who-status-badge.status-buruk,
+.who-status-badge.status-lebih,
+.who-status-badge.status-obesitas {
+  color: #DC2626;
+  background: #FEF0F0;
+  border-color: #FBBCBC;
+}
+
+.who-status-badge.status-tinggi,
+.who-status-badge.status-gizi-lebih {
+  color: #534AB7;
+  background: #EEF0FF;
+  border-color: #C9C6FF;
+}
+
+.who-status-badge.status-normal {
+  color: #14795C;
+  background: #EDFAF4;
+  border-color: #B2EDD6;
+}
+
+.who-status-badge.status-pendek,
+.who-status-badge.status-kurus {
+  color: #B45309;
+  background: #FFF8E6;
+  border-color: #FFE0A0;
+}
+
+.who-status-badge.status-sangat-pendek,
+.who-status-badge.status-sangat-kurus {
+  color: #DC2626;
+  background: #FEF0F0;
+  border-color: #FBBCBC;
+}
+
+.who-status-badge.status-empty {
+  min-width: 44px;
+  color: #6B7B8A;
+  background: #F7F6F2;
+  border-color: #E2E8ED;
+}
+
+/* ================================================================
    ACTION BUTTONS
    ================================================================ */
 
@@ -727,8 +872,8 @@
 }
 
 .btn-icon.delete:hover {
-  border-color: #E55353;
-  color: #E55353;
+  border-color: var(--danger);
+  color: var(--danger);
   background: #FEF0F0;
 }
 
@@ -740,6 +885,7 @@
 .table-error,
 .table-empty {
   flex: 1;
+  min-height: 320px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -748,6 +894,10 @@
   padding: 80px 24px;
   color: var(--text-muted);
   text-align: center;
+}
+
+.table-error {
+  color: var(--danger);
 }
 
 .table-error svg {
@@ -774,6 +924,7 @@
   font-size: 13px;
   max-width: 320px;
   line-height: 1.6;
+  margin: 0;
 }
 
 /* ================================================================
@@ -802,6 +953,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 24px 64px rgba(6, 49, 84, 0.2);
+  overflow: hidden;
 }
 
 .modal-box.modal-sm {
@@ -821,10 +973,11 @@
   font-size: 17px;
   font-weight: 700;
   color: var(--sapphire);
+  margin: 0;
 }
 
 .modal-header.danger h3 {
-  color: #E55353;
+  color: var(--danger);
 }
 
 .modal-close {
@@ -862,11 +1015,12 @@
   font-size: 15px;
   color: var(--text-dark);
   line-height: 1.5;
+  margin: 0;
 }
 
 .delete-warn {
   font-size: 12px !important;
-  color: #E55353 !important;
+  color: var(--danger) !important;
 }
 
 .modal-footer {
@@ -907,7 +1061,7 @@
 }
 
 .req {
-  color: #E55353;
+  color: var(--danger);
   margin-left: 2px;
 }
 
@@ -919,17 +1073,18 @@
   color: var(--text-dark);
   background: var(--white);
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   font-family: inherit;
   width: 100%;
 }
 
 .form-input:focus {
   border-color: var(--scooter);
+  box-shadow: 0 0 0 3px rgba(47, 157, 148, 0.1);
 }
 
 .form-input.is-invalid {
-  border-color: #E55353;
+  border-color: var(--danger);
 }
 
 .form-textarea {
@@ -939,7 +1094,7 @@
 
 .field-error {
   font-size: 11px;
-  color: #E55353;
+  color: var(--danger);
   margin-top: -2px;
 }
 
@@ -1014,7 +1169,7 @@
 }
 
 .btn-delete {
-  background: #E55353;
+  background: var(--danger);
   color: #fff;
   border: none;
   border-radius: 9px;
@@ -1066,7 +1221,7 @@
 }
 
 .toast.error {
-  background: #E55353;
+  background: var(--danger);
   color: #fff;
 }
 
@@ -1156,7 +1311,27 @@
   }
 
   .search-wrap {
-    width: 180px;
+    width: 200px;
+  }
+
+  .balita-table {
+    min-width: 940px;
+  }
+
+  .col-bbu,
+  .col-pbu,
+  .col-bbpb {
+    min-width: 140px;
+  }
+
+  .who-status-badge {
+    min-width: 112px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  .who-status-badge small {
+    font-size: 9.5px;
   }
 }
 
@@ -1180,6 +1355,7 @@
   }
 
   .balita-toolbar {
+    display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
@@ -1221,9 +1397,31 @@
     flex-shrink: 0;
   }
 
+  .balita-table {
+    min-width: 900px;
+  }
+
   .balita-table thead th,
   .balita-table tbody td {
-    padding: 11px 12px;
+    padding: 11px 10px;
+  }
+
+  .col-bbu,
+  .col-pbu,
+  .col-bbpb {
+    min-width: 132px;
+    padding: 11px 10px;
+  }
+
+  .who-status-badge {
+    min-width: 106px;
+    min-height: 34px;
+    padding: 6px 9px;
+    font-size: 10.5px;
+  }
+
+  .who-status-badge small {
+    font-size: 9px;
   }
 }
 
@@ -1276,6 +1474,7 @@
   }
 
   .balita-toolbar {
+    display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
@@ -1320,6 +1519,45 @@
 
   .btn-lock {
     flex-shrink: 0;
+  }
+
+  .balita-table {
+    min-width: 860px;
+  }
+
+  .balita-table thead th,
+  .balita-table tbody td {
+    padding: 10px 9px;
+  }
+
+  .col-nama {
+    min-width: 150px;
+  }
+
+  .col-ibu {
+    min-width: 130px;
+  }
+
+  .col-jk {
+    min-width: 76px;
+  }
+
+  .col-bbu,
+  .col-pbu,
+  .col-bbpb {
+    min-width: 124px;
+    padding: 10px 9px;
+  }
+
+  .who-status-badge {
+    min-width: 100px;
+    min-height: 32px;
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+
+  .who-status-badge small {
+    font-size: 8.5px;
   }
 
   .modal-overlay {
@@ -1469,7 +1707,7 @@
   .filter-select {
     flex: 1 1 auto;
     font-size: 13px;
-    padding: 8px 10px;
+    padding: 0 10px;
     order: 2;
   }
 
@@ -1487,9 +1725,50 @@
     font-size: 11px;
   }
 
+  .balita-table {
+    min-width: 820px;
+    font-size: 12px;
+  }
+
   .balita-table thead th,
   .balita-table tbody td {
-    padding: 10px 10px;
+    padding: 9px 8px;
+  }
+
+  .col-no {
+    width: 40px;
+    min-width: 40px;
+  }
+
+  .col-nama {
+    min-width: 145px;
+  }
+
+  .col-ibu {
+    min-width: 125px;
+  }
+
+  .col-jk {
+    min-width: 70px;
+  }
+
+  .col-bbu,
+  .col-pbu,
+  .col-bbpb {
+    min-width: 118px;
+    padding: 9px 8px;
+  }
+
+  .who-status-badge {
+    min-width: 94px;
+    min-height: 30px;
+    padding: 5px 7px;
+    font-size: 9.5px;
+  }
+
+  .who-status-badge small {
+    margin-top: 1px;
+    font-size: 8px;
   }
 
   .nama-avatar {
@@ -1627,7 +1906,7 @@
     flex: 1 1 auto;
     order: 2;
     font-size: 12px;
-    padding: 8px 8px;
+    padding: 0 8px;
   }
 
   .btn-lock {
@@ -1637,12 +1916,49 @@
   }
 
   .balita-table {
-    font-size: 12px;
+    min-width: 780px;
+    font-size: 11.5px;
   }
 
   .balita-table thead th,
   .balita-table tbody td {
-    padding: 9px 9px;
+    padding: 8px 7px;
+  }
+
+  .col-no {
+    width: 36px;
+    min-width: 36px;
+    font-size: 11px;
+  }
+
+  .col-nama {
+    min-width: 135px;
+  }
+
+  .col-ibu {
+    min-width: 115px;
+  }
+
+  .col-jk {
+    min-width: 64px;
+  }
+
+  .col-bbu,
+  .col-pbu,
+  .col-bbpb {
+    min-width: 110px;
+    padding: 8px 7px;
+  }
+
+  .who-status-badge {
+    min-width: 88px;
+    min-height: 29px;
+    padding: 5px 6px;
+    font-size: 9px;
+  }
+
+  .who-status-badge small {
+    font-size: 7.8px;
   }
 
   .nama-wrap {

@@ -30,15 +30,6 @@
         <span>Memuat grafik {{ selectedPeriodLabel }}...</span>
       </div>
 
-      <div class="modal-chart-empty" v-else-if="!selectedHasMonthlyData">
-        <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
-          <circle cx="26" cy="26" r="24" fill="#FEF0F0"/>
-          <path d="M26 15v14M26 36h.01" stroke="#E55353" stroke-width="2.2" stroke-linecap="round"/>
-        </svg>
-        <h3>Tidak ditemukan data</h3>
-        <p>Tidak ada hasil penimbangan untuk {{ selectedBalita?.nama_lengkap ?? 'balita ini' }} pada periode {{ selectedPeriodLabel }}.</p>
-      </div>
-
       <template v-else>
         <div class="grafik-tab-menu" role="tablist" aria-label="Menu grafik balita">
           <button
@@ -54,7 +45,16 @@
           </button>
         </div>
 
-        <div class="modal-chart-empty" v-if="!hasActiveChartData">
+        <div class="modal-chart-empty" v-if="!selectedHasMonthlyData">
+          <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+            <circle cx="26" cy="26" r="24" fill="#FEF0F0"/>
+            <path d="M26 15v14M26 36h.01" stroke="#E55353" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+          <h3>Tidak ditemukan data</h3>
+          <p>Tidak ada hasil penimbangan untuk {{ selectedBalita?.nama_lengkap ?? 'balita ini' }} pada periode {{ selectedPeriodLabel }}.</p>
+        </div>
+
+        <div class="modal-chart-empty" v-else-if="!hasActiveChartData">
           <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
             <circle cx="26" cy="26" r="24" fill="#FEF0F0"/>
             <path d="M26 15v14M26 36h.01" stroke="#E55353" stroke-width="2.2" stroke-linecap="round"/>
@@ -1094,10 +1094,10 @@ const chartMenus = [
   },
   {
     key: 'weightLength',
-    label: 'Panjang Badan/Berat Badan',
-    shortLabel: 'PB/BB',
-    title: 'Grafik Berat Badan menurut Panjang/Tinggi Badan (PB/BB)',
-    statusLabel: 'Status Gizi PB/BB',
+    label: 'Berat Badan/Panjang Badan',
+    shortLabel: 'BB/PB',
+    title: 'Grafik Berat Badan menurut Panjang/Tinggi Badan (BB/PB)',
+    statusLabel: 'Status Gizi BB/PB',
     sourceLabel: 'Standar WHO',
     xField: 'tinggi_badan',
     yField: 'berat_badan',

@@ -84,42 +84,40 @@
       <div v-if="activePosyanduId !== null && isUnlocked" class="laporan-page" key="page">
         <template v-if="!isGraphPage">
           <!-- Toolbar -->
-          <div class="laporan-toolbar">
-            <div class="toolbar-left">
-              <div class="toolbar-info">
-                <span class="toolbar-posyandu">{{ activePosyanduNama }}</span>
-                <span class="toolbar-count">{{ filteredBalita.length }} balita terdaftar</span>
-              </div>
+          <div class="laporan-toolbar-clean">
+            <div class="laporan-title-row">
+              <span class="laporan-posyandu-title">{{ activePosyanduNama }}</span>
+              <span class="laporan-posyandu-count">{{ filteredBalita.length }} balita terdaftar</span>
             </div>
 
-            <div class="toolbar-right laporan-toolbar-right">
-              <div class="search-wrap">
+            <div class="laporan-filter-row">
+              <div class="laporan-search-box">
                 <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
                   <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.3"/>
                   <path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
                 </svg>
-                <input v-model="searchQuery" placeholder="Cari nama balita / ibu..." class="search-input"/>
+                <input v-model="searchQuery" placeholder="Cari nama balita / ibu..." class="laporan-search-input"/>
               </div>
 
-              <select v-model="filterGender" class="filter-select gender-select">
+              <select v-model="filterGender" class="laporan-select laporan-gender-select">
                 <option value="">Semua Jenis Kelamin</option>
                 <option value="Laki-laki">Laki-laki</option>
                 <option value="Perempuan">Perempuan</option>
               </select>
 
-              <select v-model="selectedMonth" class="filter-select period-select month-select">
+              <select v-model="selectedMonth" class="laporan-select laporan-month-select">
                 <option v-for="m in monthOptions" :key="m.value" :value="m.value">
                   {{ m.label }}
                 </option>
               </select>
 
-              <select v-model.number="selectedYear" class="filter-select period-select year-select">
+              <select v-model.number="selectedYear" class="laporan-select laporan-year-select">
                 <option v-for="y in yearOptions" :key="y" :value="y">
                   {{ y }}
                 </option>
               </select>
 
-              <button class="btn-lock" @click="lockPage" title="Kunci halaman">
+              <button class="laporan-lock-btn" @click="lockPage" title="Kunci halaman" type="button">
                 <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
                   <path d="M4.5 6.5V4a3 3 0 016 0v2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
                   <rect x="2" y="6.5" width="11" height="8" rx="2" stroke="currentColor" stroke-width="1.3"/>

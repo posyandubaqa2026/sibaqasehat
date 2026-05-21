@@ -88,7 +88,7 @@
           <div class="toolbar-left">
             <div class="toolbar-info">
               <span class="toolbar-posyandu">{{ activePosyanduNama }}</span>
-              <span class="toolbar-count">{{ filteredHasilPenimbangan.length }} data terdaftar</span>
+              <span class="toolbar-count">{{ filteredHasilPenimbangan.length }} data terdaftar · Periode {{ selectedPeriodLabel }}</span>
             </div>
           </div>
           <div class="toolbar-right">
@@ -99,6 +99,19 @@
               </svg>
               <input v-model="searchQuery" placeholder="Cari nama balita" class="search-input"/>
             </div>
+
+            <select v-model="selectedMonth" class="period-select month-select" aria-label="Pilih bulan">
+              <option v-for="m in monthOptions" :key="m.value" :value="m.value">
+                {{ m.label }}
+              </option>
+            </select>
+
+            <select v-model.number="selectedYear" class="period-select year-select" aria-label="Pilih tahun">
+              <option v-for="y in yearOptions" :key="y" :value="y">
+                {{ y }}
+              </option>
+            </select>
+
             <button class="btn-add" @click="openModal('add')">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -428,6 +441,42 @@ const tableLoading = ref(false)
 const tableError = ref(null)
 const searchQuery = ref('')
 
+const now = new Date()
+const selectedMonth = ref(String(now.getMonth() + 1).padStart(2, '0'))
+const selectedYear = ref(now.getFullYear())
+
+const monthOptions = [
+  { value: '01', label: 'Januari' },
+  { value: '02', label: 'Februari' },
+  { value: '03', label: 'Maret' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'Mei' },
+  { value: '06', label: 'Juni' },
+  { value: '07', label: 'Juli' },
+  { value: '08', label: 'Agustus' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'Oktober' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'Desember' },
+]
+
+const yearOptions = computed(() => {
+  const currentYear = new Date().getFullYear()
+  return Array.from({ length: 7 }, (_, index) => currentYear - 4 + index)
+})
+
+const selectedPeriodLabel = computed(() => {
+  const monthLabel = monthOptions.find(m => m.value === selectedMonth.value)?.label ?? ''
+  return `${monthLabel} ${selectedYear.value}`
+})
+
+watch([selectedMonth, selectedYear], () => {
+  if (props.activePosyanduId && isUnlocked.value) {
+    fetchData()
+  }
+})
+
+
 const filteredHasilPenimbangan = computed(() => {
   let list = hasilPenimbanganList.value
   if (searchQuery.value) {
@@ -438,6 +487,19 @@ const filteredHasilPenimbangan = computed(() => {
   }
   return list
 })
+
+function getSelectedPeriodRange() {
+  const year = Number(selectedYear.value)
+  const month = Number(selectedMonth.value)
+
+  const start = new Date(year, month - 1, 1)
+  const end = new Date(year, month, 1)
+
+  return {
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+  }
+}
 
 async function fetchData() {
   if (!props.activePosyanduId) return
@@ -459,10 +521,15 @@ async function fetchData() {
     if (balitaError) throw balitaError
     daftarBalita.value = balitaData ?? []
 
-    // 2. Fetch hasil penimbangan
+    // 2. Fetch hasil penimbangan sesuai bulan dan tahun yang dipilih
+    const { startDate, endDate } = getSelectedPeriodRange()
+
     const { data: penimbanganData, error: penimbanganError } = await supabase
       .from(tablePenimbangan)
       .select('*')
+      .gte('tanggal_timbang', startDate)
+      .lt('tanggal_timbang', endDate)
+      .order('tanggal_timbang', { ascending: false })
       .order('created_at', { ascending: false })
 
     if (penimbanganError) throw penimbanganError

@@ -24,7 +24,6 @@
       <NavBar
         :currentPageTitle="currentPageTitle"
         :today="today"
-        :notifications="notifications"
         :posyanduList="posyanduList"
         :activeTab="activeTab"
         @navigate="setActiveTab"
@@ -42,7 +41,7 @@
 
         <!-- Error State -->
         <div class="fetch-error" v-if="fetchError">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
             <circle cx="9" cy="9" r="8" stroke="#E55353" stroke-width="1.5"/>
             <path d="M9 5v4M9 13h.01" stroke="#E55353" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
@@ -87,7 +86,7 @@
                   <span class="bar-value">{{ m.balita }}</span>
                   <div
                     class="bar balita"
-                    :style="{ height: (m.balita / maxVal * 120) + 'px' }"
+                    :style="{ '--bar-scale': barScale(m.balita) }"
                     :title="`Balita: ${m.balita}`"
                   ></div>
                 </div>
@@ -228,11 +227,14 @@
       <button
         v-for="item in mobileNavItems"
         :key="item.id"
+        type="button"
         class="mob-nav-btn"
         :class="{ active: activeNav === item.id }"
-        @click="activeNav = item.id"
+        :aria-label="`Buka ${item.label}`"
+        :aria-current="activeNav === item.id ? 'page' : undefined"
+        @click="setActiveNav(item.id)"
       >
-        <span class="mob-nav-icon" v-html="item.icon"></span>
+        <span class="mob-nav-icon" aria-hidden="true" v-html="item.icon"></span>
         <span class="mob-nav-label">{{ item.label }}</span>
       </button>
     </nav>
@@ -240,16 +242,28 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { supabase } from '../lib/supabase'
+import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
 import NavBar from '../components/NavBar.vue'
 import SideNavBar from '../components/SideNavBar.vue'
-import DataBalita from './DataBalita.vue'
-import HasilPenimbangan from './HasilPenimbangan.vue'
-import KlasifikasiBalita from './KlasifikasiBalita.vue'
-import LaporanBulanan from './LaporanBulanan.vue'
+
+const DataBalita = defineAsyncComponent(() => import('./DataBalita.vue'))
+const HasilPenimbangan = defineAsyncComponent(() => import('./HasilPenimbangan.vue'))
+const KlasifikasiBalita = defineAsyncComponent(() => import('./KlasifikasiBalita.vue'))
+const LaporanBulanan = defineAsyncComponent(() => import('./LaporanBulanan.vue'))
+
 import { navItems, reportItems, allNav } from '../data/navigationData.js'
 import '../assets/PageHome.css'
+
+let supabaseClient = null
+
+async function getSupabase() {
+  if (!supabaseClient) {
+    const mod = await import('../lib/supabase')
+    supabaseClient = mod.supabase
+  }
+
+  return supabaseClient
+}
 
 // ──────────────────────────────────────────────
 // Constants
@@ -403,6 +417,13 @@ const maxVal = computed(() =>
   Math.max(1, ...monthlyData.value.map(m => m.balita))
 )
 
+function barScale(value) {
+  const numericValue = Number(value) || 0
+  const numericMax = Number(maxVal.value) || 1
+
+  return String(Math.min(1, Math.max(0, numericValue / numericMax)))
+}
+
 const giziData = [
   { label: 'Gizi Baik',   count: 198, color: '#2F9D94' },
   { label: 'Gizi Kurang', count: 32,  color: '#F7C94E' },
@@ -436,10 +457,12 @@ const fetchError = ref(null)
 // Supabase fetch
 // ──────────────────────────────────────────────
 async function fetchDashboardData() {
-  isLoading.value  = true
+  isLoading.value = true
   fetchError.value = null
 
   try {
+    const supabase = await getSupabase()
+
     const { data: ringkasan, error: errRingkasan } = await supabase
       .from('v_ringkasan_posyandu')
       .select('id, nama')
@@ -566,7 +589,19 @@ async function fetchDashboardData() {
   }
 }
 
-fetchDashboardData()
+function runAfterFirstPaint(callback) {
+  if (typeof window === 'undefined') return
+
+  const delay = window.matchMedia('(max-width: 767px)').matches ? 700 : 0
+
+  window.requestAnimationFrame(() => {
+    window.setTimeout(callback, delay)
+  })
+}
+
+onMounted(() => {
+  runAfterFirstPaint(fetchDashboardData)
+})
 
 // ──────────────────────────────────────────────
 // Navigation
@@ -581,6 +616,7 @@ function setActiveTab(posyanduId) {
 // Auth
 // ──────────────────────────────────────────────
 async function handleLogout() {
+  const supabase = await getSupabase()
   await supabase.auth.signOut()
   window.location.href = '/'
 }
