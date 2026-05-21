@@ -131,7 +131,6 @@
           <div class="posyandu-section">
             <div class="section-header">
               <h3>Status 8 Posyandu</h3>
-              <span class="see-all">Lihat Semua →</span>
             </div>
             <div class="posyandu-grid">
               <!-- Skeleton saat loading -->
