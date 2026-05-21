@@ -99,7 +99,7 @@
           <div class="chart-card donut-card">
             <div class="card-header">
               <h3>Status Gizi Balita</h3>
-              <span class="card-sub">Bulan ini</span>
+              <span class="card-sub">{{ selectedMonthLabel }}</span>
             </div>
             <div class="donut-wrap">
               <svg width="140" height="140" viewBox="0 0 140 140">
@@ -116,7 +116,7 @@
                 <text x="70" y="82" text-anchor="middle" font-size="10" fill="#BCC5CC">total</text>
               </svg>
               <div class="donut-legend">
-                <div class="legend-row" v-for="seg in donutSegments" :key="seg.label">
+                <div class="legend-row" v-for="seg in giziData" :key="seg.label">
                   <span class="legend-dot" :style="{ background: seg.color }"></span>
                   <span>{{ seg.label }}</span>
                   <span class="legend-val">{{ seg.count }}</span>
@@ -253,6 +253,8 @@ const LaporanBulanan = defineAsyncComponent(() => import('./LaporanBulanan.vue')
 
 import { navItems, reportItems, allNav } from '../data/navigationData.js'
 import '../assets/PageHome.css'
+
+import { calcAgeMonthsAtDate, classifyWeightAge, createEmptyDashboardGiziCounts, formatMonthLabel, getCurrentMonthKey, getMonthRangeFromKey, mergeDashboardGiziCounts, normalizeDashboardGiziLabel, toNumberOrNull,} from '../utils/WHOWeightAge'
 
 let supabaseClient = null
 
@@ -424,22 +426,47 @@ function barScale(value) {
   return String(Math.min(1, Math.max(0, numericValue / numericMax)))
 }
 
-const giziData = [
-  { label: 'Gizi Baik',   count: 198, color: '#2F9D94' },
-  { label: 'Gizi Kurang', count: 32,  color: '#F7C94E' },
-  { label: 'Gizi Buruk',  count: 8,   color: '#E55353' },
-  { label: 'Gizi Lebih',  count: 10,  color: '#025F67' },
-]
-const totalGizi = computed(() => giziData.reduce((a, b) => a + b.count, 0))
+const selectedMonthKey = ref(getCurrentMonthKey())
+const selectedMonthLabel = computed(() => formatMonthLabel(selectedMonthKey.value))
+
+const giziCountsByPosyandu = ref({})
+const activeGiziCounts = computed(() => {
+  if (activeTab.value === null) {
+    return Object.values(giziCountsByPosyandu.value).reduce(
+      (total, item) => mergeDashboardGiziCounts(total, item),
+      createEmptyDashboardGiziCounts()
+    )
+  }
+
+  return giziCountsByPosyandu.value[String(activeTab.value)] ?? createEmptyDashboardGiziCounts()
+})
+
+const giziData = computed(() => [
+  { label: 'Gizi Baik', count: activeGiziCounts.value['Gizi Baik'] ?? 0, color: '#2F9D94' },
+  { label: 'Gizi Kurang', count: activeGiziCounts.value['Gizi Kurang'] ?? 0, color: '#F7C94E' },
+  { label: 'Gizi Buruk', count: activeGiziCounts.value['Gizi Buruk'] ?? 0, color: '#E55353' },
+  { label: 'Gizi Lebih', count: activeGiziCounts.value['Gizi Lebih'] ?? 0, color: '#025F67' },
+])
+
+const totalGizi = computed(() =>
+  giziData.value.reduce((total, item) => total + item.count, 0)
+)
+
 const donutSegments = computed(() => {
   const total = totalGizi.value
   const circumference = 314
+
+  if (total <= 0) return []
+
   let offset = 0
-  return giziData.map(g => {
-    const dash = (g.count / total) * circumference
-    const seg = { ...g, dash, offset: -offset }
+
+  return giziData.value.map(item => {
+    const dash = (item.count / total) * circumference
+    const segment = { ...item, dash, offset: -offset }
+
     offset += dash
-    return seg
+
+    return segment
   })
 })
 
@@ -478,16 +505,8 @@ async function fetchDashboardData() {
       return `${year}-${month}-${day}`
     }
 
-    const now = new Date()
     const year = currentYear.value
-
-    const startOfMonth = formatLocalDate(
-      new Date(now.getFullYear(), now.getMonth(), 1)
-    )
-
-    const startOfNextMonth = formatLocalDate(
-      new Date(now.getFullYear(), now.getMonth() + 1, 1)
-    )
+    const { start: startOfMonth, end: startOfNextMonth } = getMonthRangeFromKey(selectedMonthKey.value)
 
     const startOfYear = formatLocalDate(
       new Date(year, 0, 1)
@@ -500,31 +519,81 @@ async function fetchDashboardData() {
     const balitaCounts = {}
     const penimbanganCounts = {}
     const monthlyPenimbanganCounts = Array(12).fill(0)
+    const nextGiziCountsByPosyandu = {}
+
+    giziCountsByPosyandu.value = nextGiziCountsByPosyandu
 
     await Promise.all(
       POSYANDU_NAMES.map(async (nama, i) => {
-        const { count: cBalita, error: eBalita } = await supabase
+        const ringkasanItem = ringkasan.find(item => item.nama === nama)
+        const posyanduId = ringkasanItem?.id ?? null
+
+        const { data: balitaRows, error: eBalita } = await supabase
           .from(POSYANDU_TABLES[i])
-          .select('*', { count: 'exact', head: true })
+          .select('id, tanggal_lahir, jenis_kelamin')
+          .order('id')
 
         if (eBalita) {
-          console.warn(`[Dashboard] Gagal hitung balita ${POSYANDU_TABLES[i]}:`, eBalita.message)
+          console.warn(`[Dashboard] Gagal ambil balita ${POSYANDU_TABLES[i]}:`, eBalita.message)
           balitaCounts[nama] = 0
         } else {
-          balitaCounts[nama] = cBalita ?? 0
+          balitaCounts[nama] = balitaRows?.length ?? 0
         }
 
-        const { count: cPenimbangan, error: ePenimbangan } = await supabase
+        const { data: monthPenimbanganRows, error: ePenimbangan } = await supabase
           .from(PENIMBANGAN_TABLES[i])
-          .select('*', { count: 'exact', head: true })
+          .select('id_bayi, berat_badan, tinggi_badan, tanggal_timbang, created_at')
           .gte('tanggal_timbang', startOfMonth)
           .lt('tanggal_timbang', startOfNextMonth)
+          .order('tanggal_timbang', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false, nullsFirst: false })
 
         if (ePenimbangan) {
-          console.warn(`[Dashboard] Gagal hitung penimbangan bulan ini ${PENIMBANGAN_TABLES[i]}:`, ePenimbangan.message)
+          console.warn(`[Dashboard] Gagal ambil penimbangan bulan ini ${PENIMBANGAN_TABLES[i]}:`, ePenimbangan.message)
           penimbanganCounts[nama] = 0
         } else {
-          penimbanganCounts[nama] = cPenimbangan ?? 0
+          penimbanganCounts[nama] = monthPenimbanganRows?.length ?? 0
+        }
+
+        const perPosyanduGizi = createEmptyDashboardGiziCounts()
+        const balitaById = new Map((balitaRows ?? []).map(row => [String(row.id), row]))
+        const latestWeightAgeByBaby = {}
+
+        ;(monthPenimbanganRows ?? []).forEach(row => {
+          if (!row.id_bayi) return
+          if (toNumberOrNull(row.berat_badan) === null) return
+
+          const key = String(row.id_bayi)
+
+          if (!latestWeightAgeByBaby[key]) {
+            latestWeightAgeByBaby[key] = row
+          }
+        })
+
+        Object.entries(latestWeightAgeByBaby).forEach(([idBayi, row]) => {
+          const balita = balitaById.get(String(idBayi))
+          if (!balita) return
+
+          const tanggalUkur = row.tanggal_timbang ?? row.created_at ?? null
+          const ageMonths = calcAgeMonthsAtDate(balita.tanggal_lahir, tanggalUkur)
+
+          if (ageMonths === null || ageMonths < 0 || ageMonths > 60) return
+
+          const rawLabel = classifyWeightAge({
+            jenis_kelamin: balita.jenis_kelamin,
+            age_months: ageMonths,
+            berat_badan: row.berat_badan,
+          })
+
+          const dashboardLabel = normalizeDashboardGiziLabel(rawLabel)
+
+          if (dashboardLabel && perPosyanduGizi[dashboardLabel] !== undefined) {
+            perPosyanduGizi[dashboardLabel] += 1
+          }
+        })
+
+        if (posyanduId !== null) {
+          nextGiziCountsByPosyandu[String(posyanduId)] = perPosyanduGizi
         }
 
         const { data: yearlyPenimbangan, error: eYearlyPenimbangan } = await supabase
@@ -536,7 +605,7 @@ async function fetchDashboardData() {
         if (eYearlyPenimbangan) {
           console.warn(`[Dashboard] Gagal ambil grafik tahunan ${PENIMBANGAN_TABLES[i]}:`, eYearlyPenimbangan.message)
         } else {
-          yearlyPenimbangan.forEach(row => {
+          ;(yearlyPenimbangan ?? []).forEach(row => {
             if (!row.tanggal_timbang) return
 
             const monthIndex = Number(String(row.tanggal_timbang).slice(5, 7)) - 1
